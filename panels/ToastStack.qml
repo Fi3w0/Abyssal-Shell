@@ -21,9 +21,12 @@ PanelWindow {
     margins.right: 10
     exclusiveZone: 0
     implicitWidth: 340
-    implicitHeight: Math.max(col.implicitHeight + 8, 1)
+    // Fixed size, room for maxToasts: resizing a Wayland surface every
+    // animation frame stutters. Only the toasts themselves take input.
+    implicitHeight: 620
     color: "transparent"
     visible: toastModel.count > 0
+    mask: Region { item: col }
 
     ListModel { id: toastModel }
 
@@ -43,10 +46,12 @@ PanelWindow {
         }
     }
 
-    ColumnLayout {
+    Column {
         id: col
         anchors { top: parent.top; left: parent.left; right: parent.right; topMargin: 4 }
         spacing: 8
+        // Toasts below a closing one glide up instead of jumping.
+        move: Transition { NumberAnimation { properties: "y"; duration: 220; easing.type: Easing.OutCubic } }
 
         Repeater {
             model: toastModel
@@ -56,8 +61,8 @@ PanelWindow {
                 required property int index
                 property bool entered: false
 
-                Layout.fillWidth: true
-                implicitHeight: row.implicitHeight + 24
+                width: col.width
+                height: row.implicitHeight + 24
                 radius: 16
                 color: Theme.glassStrong
                 border.width: 1
