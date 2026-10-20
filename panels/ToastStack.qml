@@ -11,6 +11,8 @@ import "../services"
 PanelWindow {
     id: root
 
+    required property string output
+
     WlrLayershell.namespace: "abyssal-toast"
     WlrLayershell.layer: WlrLayer.Overlay
 
@@ -38,7 +40,7 @@ PanelWindow {
     Connections {
         target: Notifications
         function onToast(item) {
-            const here = root.screen ? root.screen.name : ""
+            const here = root.output
             const target = Tide.focusedOutput !== "" ? Tide.focusedOutput : (Quickshell.screens[0]?.name ?? "")
             if (here !== target) return
             toastModel.append({ tid: item.nid, app: item.app, title: item.title, body: item.body, icon: item.icon, closing: false })

@@ -175,7 +175,7 @@ Scope {
                     spacing: 8
                     Layout.fillWidth: true
                     TextButton {
-                        text: "Edit bars"
+                        text: "Edit panels"
                         icon: "pencil"
                         onClicked: Shell.setEditing(true)
                     }

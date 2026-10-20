@@ -9,7 +9,10 @@ import "../services"
 PanelWindow {
     id: root
 
-    readonly property bool shown: screen && Shell.osdOutput === screen.name
+    // Passed in from shell.qml: deriving visibility from the window's own
+    // `screen` makes a binding loop.
+    required property string output
+    readonly property bool shown: Shell.osdOutput === output
 
     WlrLayershell.namespace: "abyssal-osd"
     WlrLayershell.layer: WlrLayer.Overlay

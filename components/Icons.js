@@ -32,6 +32,8 @@ var paths = {
     "check":           '<path d="M20 6L9 17l-5-5"/>',
     "square":          '<path d="M5 5h14v14H5z"/>',
     "app":             '<path d="M3 5h18v14H3z"/><path d="M3 9h18"/>',
+    "search":          '<path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z"/><path d="M20 20l-4-4"/>',
+    "grid":            '<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/>',
     "sliders":         '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><path d="M14 4v4M8 10v4M16 16v4"/>',
     "plus":            '<path d="M12 5v14M5 12h14"/>',
     "minus":           '<path d="M5 12h14"/>',

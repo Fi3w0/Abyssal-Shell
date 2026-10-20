@@ -3,13 +3,15 @@
 import QtQuick
 import Quickshell
 import "bar"
+import "edit"
 import "panels"
 import "services"
 
-// Abyssal Shell, for TideWM. Each monitor gets the bars its layout entry
-// asks for, its own toasts, quick settings, volume popup, and the power
-// menu and bar editor when opened there. The lock screen is a separate
-// instance (lock/shell.qml).
+// Abyssal Shell, for TideWM. Each monitor gets the panels its layout entry
+// asks for (taskbar, top bar, dock: all the same Panel), its own toasts,
+// quick settings, app launcher and volume popup, and the power menu and the
+// edit-mode overlays when they are open there. The lock screen is a
+// separate instance (lock/shell.qml).
 ShellRoot {
     // Touch the services so they start with the shell, not on first use.
     readonly property var _services: [Tide, SystemInfo, Notifications, Shell, Audio]
@@ -22,22 +24,24 @@ ShellRoot {
             required property var modelData
 
             Variants {
-                model: BarLayout.barsFor(monitor.modelData.name)
-                delegate: Bar {
+                model: PanelLayout.panelsFor(monitor.modelData.name)
+                delegate: Panel {
                     required property var modelData
                     screen: monitor.modelData
                     config: modelData
                 }
             }
 
-            ToastStack { screen: monitor.modelData }
-            Osd { screen: monitor.modelData }
+            ToastStack { screen: monitor.modelData; output: monitor.modelData.name }
+            Osd { screen: monitor.modelData; output: monitor.modelData.name }
             QuickSettings { screen: monitor.modelData }
+            AppLauncher { screen: monitor.modelData; output: monitor.modelData.name }
+            Welcome { screen: monitor.modelData }
 
-            LazyLoader {
-                active: Shell.editing
-                EditPanel { screen: monitor.modelData }
-            }
+            // Edit mode
+            EditPill { screen: monitor.modelData; output: monitor.modelData.name }
+            WidgetSidebar { screen: monitor.modelData; output: monitor.modelData.name }
+            PositionOverlay { screen: monitor.modelData; output: monitor.modelData.name }
 
             LazyLoader {
                 active: Shell.powerOn === monitor.modelData.name
