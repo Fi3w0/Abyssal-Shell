@@ -41,9 +41,16 @@ Singleton {
     property bool _armed: false
     Timer { running: true; interval: 1500; onTriggered: root._armed = true }
 
+    // Read the node itself here: inside its change signal, the `volume` and
+    // `muted` bindings above can still hold the old value (the OSD showed
+    // "muted" right after unmuting).
     Connections {
         target: root.sink && root.sink.audio ? root.sink.audio : null
-        function onVolumesChanged() { if (root._armed) Shell.showOsd("volume", root.volume, root.muted) }
-        function onMutedChanged() { if (root._armed) Shell.showOsd("volume", root.volume, root.muted) }
+        function onVolumesChanged() { root.osdFromNode() }
+        function onMutedChanged() { root.osdFromNode() }
+    }
+    function osdFromNode() {
+        if (!_armed || !sink || !sink.audio) return
+        Shell.showOsd("volume", sink.audio.volume, sink.audio.muted)
     }
 }
