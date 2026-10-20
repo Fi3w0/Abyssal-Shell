@@ -17,8 +17,12 @@ Singleton {
     ]
 
     readonly property var registry: ({
-        "launcher":       { file: "Launcher.qml",      name: "Launcher",        cat: "shell",  desc: "Opens the app grid" },
-        "logo":           { file: "Logo.qml",          name: "Logo",            cat: "shell",  desc: "Abyssal mark, opens the app grid" },
+        "launcher":       { file: "Launcher.qml",      name: "Launcher",        cat: "shell",  desc: "Opens the launcher",
+                            options: [{ key: "icon", label: "Icon", values: [["builtin:logo", "Abyssal"], ["builtin:grid", "Grid"]], default: "builtin:grid" },
+                                      { key: "iconSize", label: "Size", values: [[40, "40%"], [50, "50%"], [60, "60%"], [75, "75%"], [90, "90%"]], default: 60 }] },
+        "logo":           { file: "Logo.qml",          name: "Logo",            cat: "shell",  desc: "Abyssal mark or any image, opens the launcher",
+                            options: [{ key: "icon", label: "Icon", values: [["builtin:logo", "Abyssal"], ["builtin:grid", "Grid"]], default: "builtin:logo" },
+                                      { key: "iconSize", label: "Size", values: [[40, "40%"], [50, "50%"], [60, "60%"], [75, "75%"], [90, "90%"]], default: 50 }] },
         "workspaces":     { file: "Workspaces.qml",    name: "Workspaces",      cat: "tidewm", desc: "This monitor’s workspaces" },
         "window-title":   { file: "WindowTitle.qml",   name: "Window title",    cat: "tidewm", desc: "Last window used on this monitor" },
         "task-manager":   { file: "TaskManager.qml",   name: "Task manager",    cat: "tidewm", desc: "Open and pinned apps",
