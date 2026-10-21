@@ -85,18 +85,20 @@ ColumnLayout {
         Layout.bottomMargin: 4
     }
 
-    ColumnLayout {
+    Item {
         visible: Notifications.history.length === 0
-        spacing: 8
         Layout.fillWidth: true
-        Layout.topMargin: 28
-        Layout.bottomMargin: 28
-        Icon { name: "bell"; size: 22; stroke: 1.5; color: Theme.overlay; Layout.alignment: Qt.AlignHCenter }
-        Text {
-            text: "No notifications"
-            color: Theme.overlay
-            font { family: Theme.font; pixelSize: 11 }
-            Layout.alignment: Qt.AlignHCenter
+        Layout.fillHeight: true
+        implicitHeight: 132
+        Column {
+            anchors.centerIn: parent
+            spacing: 8
+            Icon { name: "bell"; size: 22; stroke: 1.5; color: Theme.overlay; anchors.horizontalCenter: parent.horizontalCenter }
+            Text {
+                text: "No notifications"
+                color: Theme.overlay
+                font { family: Theme.font; pixelSize: 11 }
+            }
         }
     }
 
@@ -229,9 +231,11 @@ ColumnLayout {
                     Layout.topMargin: 4
                     Layout.preferredHeight: visible ? Math.min(120, width * implicitHeight / Math.max(1, implicitWidth)) : 0
                     source: card.modelData.image || ""
-                    fillMode: Image.PreserveAspectCrop
+                    fillMode: Image.PreserveAspectFit
                     asynchronous: true
-                    sourceSize.width: 500
+                    sourceSize.width: Math.ceil(width * (Screen.devicePixelRatio || 1))
+                    sourceSize.height: Math.ceil(120 * (Screen.devicePixelRatio || 1))
+                    mipmap: true
                 }
                 Flow {
                     visible: card.modelData.actions.length > 0

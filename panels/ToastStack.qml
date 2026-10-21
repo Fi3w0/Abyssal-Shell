@@ -197,9 +197,11 @@ PanelWindow {
                                 id: pic
                                 anchors.fill: parent
                                 source: toast.model.image
-                                fillMode: Image.PreserveAspectCrop
+                                fillMode: Image.PreserveAspectFit
                                 asynchronous: true
-                                sourceSize.width: 600
+                                sourceSize.width: Math.ceil(width * (Screen.devicePixelRatio || 1))
+                                sourceSize.height: Math.ceil(150 * (Screen.devicePixelRatio || 1))
+                                mipmap: true
                             }
                         }
                         // Up to three of the app's buttons (Reply, Open…).

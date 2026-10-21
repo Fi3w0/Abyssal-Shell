@@ -15,7 +15,7 @@ RowLayout {
     NotificationList {
         active: root.active
         Layout.fillWidth: true
-        Layout.alignment: Qt.AlignTop
+        Layout.fillHeight: true
     }
     Rectangle {
         implicitWidth: 1
