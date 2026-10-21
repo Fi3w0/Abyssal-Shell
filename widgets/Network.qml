@@ -12,6 +12,7 @@ StatChip {
     showIcon: opts.showIcon !== false
     icon: SystemInfo.netType === "wifi" ? "wifi" : SystemInfo.netType === "ethernet" ? "ethernet" : "wifi-off"
     iconColor: SystemInfo.netType === "" ? Theme.overlay : Theme.cyan
+    badge: Vpn.on ? "shield-check" : ""
     // Vertical bars have no room for the network name: signal or nothing.
     value: opts.detail === "compact" ? "" : SystemInfo.netType === "" ? (vertical ? "" : "Offline")
          : SystemInfo.netType === "ethernet" ? (vertical ? "" : "Wired")

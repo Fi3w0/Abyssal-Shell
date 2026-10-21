@@ -15,6 +15,8 @@ Item {
     property bool   active: false
     property bool   vertical: false
     property bool   showIcon: true
+    // A small mark on the icon's corner (e.g. "shield-check" while a VPN is up).
+    property string badge: ""
     signal clicked()
 
     implicitHeight: vertical ? col.implicitHeight + 12 : 28
@@ -33,7 +35,20 @@ Item {
         anchors.centerIn: parent
         spacing: 5
 
-        Icon { visible: root.showIcon; name: root.icon; size: 15; color: root.iconColor; Layout.alignment: Qt.AlignVCenter }
+        Icon {
+            visible: root.showIcon
+            name: root.icon
+            size: 15
+            color: root.iconColor
+            Layout.alignment: Qt.AlignVCenter
+            Rectangle {
+                visible: root.badge !== ""
+                anchors { right: parent.right; bottom: parent.bottom; rightMargin: -4; bottomMargin: -3 }
+                width: 10; height: 10; radius: 5
+                color: Theme.base
+                Icon { anchors.centerIn: parent; name: root.badge || "square"; size: 9; stroke: 2.4; color: Theme.success }
+            }
+        }
         Text {
             visible: root.label !== ""
             text: root.label

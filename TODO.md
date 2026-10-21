@@ -27,8 +27,10 @@ building it. The installer and the settings app are tracked separately.
       pacman + AUR, DNF, APT, XBPS, Flatpak. Bar widget, quick-menu tile,
       panel with important / selected / dependency, Update all and Sync in
       a terminal (`scripts/terminal`), toast once per batch, busy guard.
-- [ ] **VPN toggle.** NetworkManager VPN connections: a quick-menu tile
-      and/or the Wi-Fi page.
+- [x] **VPN toggle.** NetworkManager VPN/WireGuard via nmcli (+ nmcli monitor):
+      quick-menu tile toggles the last used one, VPN section with switches
+      on the Wi-Fi page, shield badge on the network widget while one is up.
+      Hidden while none are set up.
 - [ ] **Claude Code and Codex usage widget.** A bar widget with a panel
       showing the 5-hour and weekly usage and service status for both.
       Research the data sources first: local session logs

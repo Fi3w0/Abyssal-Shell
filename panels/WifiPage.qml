@@ -83,6 +83,38 @@ ColumnLayout {
         active: true
     }
 
+    // VPN and WireGuard connections (NetworkManager), when there are any.
+    SectionLabel {
+        visible: Vpn.available
+        text: "VPN"
+    }
+    Repeater {
+        model: Vpn.available ? Vpn.connections : []
+        delegate: ListRow {
+            required property var modelData
+            icon: modelData.active ? "shield-check" : "shield"
+            title: modelData.name
+            active: modelData.active
+            activeColor: Theme.success
+            detail: Vpn.working === modelData.uuid ? (modelData.active ? "Disconnecting…" : "Connecting…")
+                  : modelData.active ? "Connected" : modelData.type === "wireguard" ? "WireGuard" : "VPN"
+            onClicked: Vpn.toggle(modelData)
+            Switch {
+                checked: modelData.active
+                onToggled: Vpn.toggle(modelData)
+            }
+        }
+    }
+    Text {
+        visible: Vpn.error !== ""
+        Layout.fillWidth: true
+        Layout.leftMargin: 4
+        wrapMode: Text.Wrap
+        text: Vpn.error
+        color: Theme.danger
+        font { family: Theme.font; pixelSize: 11 }
+    }
+
     SectionLabel {
         visible: root.current !== null && Networking.wifiEnabled
         text: "Connected"

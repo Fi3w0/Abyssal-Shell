@@ -54,7 +54,8 @@ Scope {
         media:     { label: "Media player",    icon: "play",        sizes: [[4, 2], [2, 2]] },
         wallpaper: { label: "Wallpaper",       icon: "image",       sizes: [[2, 1], [1, 1]] },
         updates:   { label: "Updates",         icon: "package",     sizes: [[2, 1], [1, 1]] },
-        drives:    { label: "Drives",          icon: "usb",         sizes: [[2, 1], [1, 1]] }
+        drives:    { label: "Drives",          icon: "usb",         sizes: [[2, 1], [1, 1]] },
+        vpn:       { label: "VPN",             icon: "shield",      sizes: [[2, 1], [1, 1]] }
     })
     // Ids this version doesn't know (an older or newer file) are skipped;
     // unavailable tiles too when hidden (never while editing).
@@ -177,6 +178,14 @@ Scope {
             return { icon: "image", title: "Wallpaper", on: Appearance.fromWallpaper, accent: Theme.accent,
                      detail: Appearance.fromWallpaper ? "Theme follows it" : Themes.name(Themes.activeId),
                      action: () => Shell.toggleWallpaperPicker(root.screen.name) }
+        case "vpn": {
+            const c = Vpn.preferred
+            return { icon: Vpn.on ? "shield-check" : "shield", title: "VPN", on: Vpn.on, accent: Theme.success,
+                     available: Vpn.available, page: "wifi",
+                     detail: !Vpn.available ? "None set up" : Vpn.working ? "Switching…"
+                           : Vpn.on ? Vpn.active.map(a => a.name).join(", ") : c ? c.name : "Off",
+                     action: () => Vpn.toggleDefault() }
+        }
         case "drives":
             return { icon: "usb", title: "Drives", on: Drives.count > 0, accent: Theme.accent, page: "drives",
                      available: Drives.count > 0,
