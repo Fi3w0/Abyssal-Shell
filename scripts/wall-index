@@ -6,7 +6,9 @@
 Looks in the given folders, else <Pictures>/wallpapers (xdg-user-dir), two
 levels deep, for images and videos. For each file it keeps, in
 $XDG_CACHE_HOME/abyssal/wallpapers/, a 480 px JPEG thumbnail (a frame a
-little into a video) and a JSON record: kind, size, length and a palette.
+little into a video), for videos an 8 s, 640 px preview clip (cheap to
+play in the picker even without hardware decoding) and a JSON record:
+kind, size, length and a palette.
 Records are reused until the file changes. Prints one JSON array.
 
 The palette: the thumbnail's pixels (decoded by ffmpeg, so only ffmpeg and
@@ -30,11 +32,27 @@ from concurrent.futures import ThreadPoolExecutor
 
 IMAGES = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".avif", ".jxl"}
 VIDEOS = {".mp4", ".mkv", ".webm", ".mov", ".avi", ".m4v"}
-VERSION = 1
+VERSION = 2
 HOME = os.path.expanduser("~")
 CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.join(HOME, ".cache"), "abyssal", "wallpapers")
 FFMPEG = shutil.which("ffmpeg")
 FFPROBE = shutil.which("ffprobe")
+
+
+def encoder():
+    """libx264 when ffmpeg has it, else its built-in MPEG-4."""
+    if not FFMPEG:
+        return []
+    try:
+        out = subprocess.run([FFMPEG, "-hide_banner", "-encoders"], capture_output=True, text=True).stdout
+    except OSError:
+        return []
+    if " libx264 " in out:
+        return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "30", "-pix_fmt", "yuv420p"]
+    return ["-c:v", "mpeg4", "-q:v", "6"]
+
+
+ENCODER = encoder()
 
 
 def default_folders():
@@ -223,7 +241,8 @@ def record(path):
     kind = "video" if ext in VIDEOS or (ext == ".gif") else "image"
     w, h, dur = probe(path)
     rec = {"version": VERSION, "path": path, "name": os.path.splitext(os.path.basename(path))[0],
-           "kind": kind, "width": w, "height": h, "duration": round(dur, 1), "thumb": "", "palette": None}
+           "kind": kind, "width": w, "height": h, "duration": round(dur, 1), "thumb": "", "preview": "",
+           "palette": None}
     if FFMPEG:
         seek = ["-ss", str(min(1.0, dur / 3))] if ext in VIDEOS and dur > 0 else []
         ok = subprocess.run([FFMPEG, "-v", "error", "-y", *seek, "-i", path, "-frames:v", "1",
@@ -237,6 +256,13 @@ def record(path):
             pixels = [tuple(raw[i:i + 3]) for i in range(0, len(raw) - 2, 3)]
             if pixels:
                 rec["palette"] = palette(pixels)
+        if kind == "video" and ENCODER:
+            clip = os.path.join(CACHE, key + ".preview.mp4")
+            ok = subprocess.run([FFMPEG, "-v", "error", "-y", "-i", path, "-t", "8", "-an",
+                                 "-vf", "scale=640:-2,fps=30", *ENCODER, "-movflags", "+faststart", clip],
+                                capture_output=True, timeout=120).returncode == 0
+            if ok and os.path.exists(clip):
+                rec["preview"] = clip
     tmp = meta + ".tmp"
     with open(tmp, "w") as f:
         json.dump(rec, f)

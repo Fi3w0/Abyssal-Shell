@@ -329,7 +329,7 @@ PanelWindow {
                     required property int index
                     readonly property int slot: index - 4
                     readonly property int at: Math.round(root.pos) + slot
-                    readonly property var w: root.n ? root.list[root.wrap(at)] : null
+                    readonly property var w: root.n ? (root.list[root.wrap(at)] || null) : null
                     readonly property real d: at - root.pos
                     readonly property real a: Math.abs(d)
                     readonly property bool centre: a < 0.5
@@ -378,7 +378,8 @@ PanelWindow {
                             anchors.fill: parent
                             active: card.centre && root.settled && root.open && card.w !== null && card.w.kind === "video"
                             source: "WallpaperVideo.qml"
-                            onLoaded: item.path = Qt.binding(() => card.w ? card.w.path : "")
+                            // The small preview clip when there is one.
+                            onLoaded: item.path = Qt.binding(() => card.w ? (card.w.preview || card.w.path) : "")
                         }
                         // Turned-away cards sink into the dark.
                         Rectangle {
