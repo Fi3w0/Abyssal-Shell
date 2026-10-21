@@ -1,0 +1,53 @@
+#!/bin/sh
+# Picks the file chooser TideWM's desktop portal uses, so "Open file"
+# dialogs (Abyssal's included) look like the user's file manager:
+#   default file manager for folders, if it is a known one, else the first
+#   installed of Dolphin, Nautilus, Thunar, Nemo, Caja, PCManFM;
+#   Dolphin -> KDE portal, the others -> GTK portal.
+# Writes ~/.config/xdg-desktop-portal/tidewm-portals.conf only when it does
+# not exist yet (a user's own file always wins), then restarts the portal.
+# Only the TideWM session reads that file; Plasma uses kde-portals.conf.
+set -eu
+
+conf_dir="${XDG_CONFIG_HOME:-$HOME/.config}/xdg-desktop-portal"
+conf="$conf_dir/tidewm-portals.conf"
+[ -e "$conf" ] && exit 0
+
+portals=/usr/share/xdg-desktop-portal/portals
+
+backend_for() {
+    case "$1" in
+        *dolphin*) echo kde ;;
+        *nautilus*|*thunar*|*Thunar*|*nemo*|*caja*|*pcmanfm*) echo gtk ;;
+        *) echo "" ;;
+    esac
+}
+
+default=$(xdg-mime query default inode/directory 2>/dev/null || true)
+backend=$(backend_for "$default")
+
+if [ -z "$backend" ]; then
+    for fm in dolphin nautilus thunar nemo caja pcmanfm-qt pcmanfm; do
+        if command -v "$fm" >/dev/null 2>&1; then
+            backend=$(backend_for "$fm")
+            break
+        fi
+    done
+fi
+
+# Nothing recognised, or that portal backend isn't installed: keep TideWM's
+# shipped choice.
+[ -n "$backend" ] && [ -e "$portals/$backend.portal" ] || exit 0
+
+mkdir -p "$conf_dir"
+cat > "$conf" <<EOF
+# Written by Abyssal (scripts/portal-filechooser) for the TideWM session
+# only; edit freely, it is never overwritten. Same as TideWM's shipped
+# tidewm-portals.conf, plus the file chooser of your file manager.
+[preferred]
+default=gtk
+org.freedesktop.impl.portal.ScreenCast=tidewm
+org.freedesktop.impl.portal.FileChooser=$backend;gtk
+EOF
+
+systemctl --user try-restart xdg-desktop-portal.service 2>/dev/null || true

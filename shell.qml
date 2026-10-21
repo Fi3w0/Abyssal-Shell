@@ -14,7 +14,7 @@ import "services"
 // separate instance (lock/shell.qml).
 ShellRoot {
     // Touch the services so they start with the shell, not on first use.
-    readonly property var _services: [Tide, SystemInfo, Notifications, Shell, Audio]
+    readonly property var _services: [Tide, SystemInfo, Notifications, Shell, Audio, Wallpaper, Idle, Clipboard]
 
     Variants {
         model: Quickshell.screens
@@ -24,17 +24,21 @@ ShellRoot {
             required property var modelData
 
             Variants {
-                model: PanelLayout.panelsFor(monitor.modelData.name)
+                // Keep each edge's window when appearance or widgets change.
+                model: PanelLayout.panelsFor(monitor.modelData.name).map(p => p.edge)
                 delegate: Panel {
-                    required property var modelData
+                    required property string modelData
                     screen: monitor.modelData
-                    config: modelData
+                    config: PanelLayout.panelsFor(monitor.modelData.name).find(p => p.edge === modelData)
+                            || PanelLayout.normalise({ items: [] }, modelData)
                 }
             }
 
             ToastStack { screen: monitor.modelData; output: monitor.modelData.name }
             Osd { screen: monitor.modelData; output: monitor.modelData.name }
             QuickSettings { screen: monitor.modelData }
+            DetailPopup { screen: monitor.modelData }
+            IdleBlank { screen: monitor.modelData }
             AppLauncher { screen: monitor.modelData; output: monitor.modelData.name }
             Welcome { screen: monitor.modelData }
 

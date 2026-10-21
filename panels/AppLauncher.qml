@@ -102,8 +102,10 @@ PanelWindow {
         Shell.launcherOn = ""
     }
 
-    visible: open
-    onOpenChanged: if (open) { search.text = ""; query = ""; selected = 0; search.forceActiveFocus() }
+    // Up until the closing animation is done.
+    property bool shown: false
+    visible: shown
+    onOpenChanged: if (open) { shown = true; search.text = ""; query = ""; selected = 0; search.forceActiveFocus() }
     WlrLayershell.namespace: "abyssal-launcher"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
@@ -116,10 +118,16 @@ PanelWindow {
     Rectangle {
         id: card
         anchors.horizontalCenter: parent.horizontalCenter
-        y: Math.round(parent.height * 0.22)
+        // Fades in while rising slightly; closing reverses it.
+        property real t: root.open ? 1 : 0
+        Behavior on t { NumberAnimation { duration: root.open ? 220 : 140; easing.type: Easing.OutCubic } }
+        onTChanged: if (t === 0 && !root.open) root.shown = false
+        opacity: t
+        scale: 0.97 + 0.03 * t
+        y: Math.round(parent.height * 0.22 + (1 - t) * 14)
         width: 680
         height: col.implicitHeight + 16
-        radius: 22
+        radius: Theme.popupRadius
         color: Theme.glassStrong
         border.width: 1
         border.color: Theme.alpha(Theme.text, 0.10)
@@ -203,12 +211,11 @@ PanelWindow {
                         Item {
                             implicitWidth: 32
                             implicitHeight: 32
-                            IconImage {
+                            AppIcon {
                                 id: appIcon
                                 anchors.fill: parent
                                 asynchronous: true
-                                source: !rowItem.isCalc && rowItem.modelData.entry.icon
-                                        ? Quickshell.iconPath(rowItem.modelData.entry.icon, true) : ""
+                                iconName: !rowItem.isCalc ? rowItem.modelData.entry.icon : ""
                                 visible: !rowItem.isCalc && status === Image.Ready
                             }
                             Icon {
