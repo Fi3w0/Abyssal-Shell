@@ -58,7 +58,7 @@ PanelWindow {
 
                     Rectangle {
                         anchors.fill: parent
-                        radius: 22
+                        radius: Theme.popupRadius
                         color: Theme.glassStrong
                         border.width: 1
                         border.color: btn.hov && btn.modelData.ready ? btn.modelData.color : Theme.hairline

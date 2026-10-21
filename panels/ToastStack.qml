@@ -65,7 +65,7 @@ PanelWindow {
 
                 width: col.width
                 height: row.implicitHeight + 24
-                radius: 16
+                radius: Theme.trench ? Theme.popupRadius : 16
                 color: Theme.glassStrong
                 border.width: 1
                 border.color: Theme.hairline
@@ -102,11 +102,11 @@ PanelWindow {
                         color: Theme.alpha(Theme.accent, 0.18)
                         Layout.alignment: Qt.AlignTop
 
-                        IconImage {
+                        AppIcon {
                             id: appIcon
                             anchors.centerIn: parent
                             implicitSize: 20
-                            source: toast.model.icon !== "" ? Quickshell.iconPath(toast.model.icon, true) : ""
+                            iconName: toast.model.icon
                             visible: status === Image.Ready
                         }
                         Icon {

@@ -25,7 +25,11 @@ PanelWindow {
         return q === "" || w.name.toLowerCase().includes(q) || w.desc.toLowerCase().includes(q)
     })
 
-    visible: Shell.editing && Shell.sidebarOpen && target !== null && target.output === output
+    readonly property bool open: Shell.editing && Shell.sidebarOpen && target !== null && target.output === output
+    // Up until the slide-out is done.
+    property bool shown: false
+    onOpenChanged: if (open) shown = true
+    visible: shown
     WlrLayershell.namespace: "abyssal-edit-sidebar"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
@@ -36,7 +40,14 @@ PanelWindow {
     color: "transparent"
 
     Rectangle {
+        id: sidebarCard
         anchors.fill: parent
+        // Slides in from the left edge and fades; closing reverses it.
+        property real t: root.open ? 1 : 0
+        Behavior on t { NumberAnimation { duration: root.open ? 240 : 160; easing.type: Easing.OutCubic } }
+        onTChanged: if (t === 0 && !root.open) root.shown = false
+        opacity: t
+        transform: Translate { x: -(1 - sidebarCard.t) * 28 }
         radius: 20
         color: Theme.glassStrong
         border.width: 1
@@ -148,8 +159,9 @@ PanelWindow {
                             color: Theme.alpha(Theme.crust, 0.55)
                             Icon {
                                 anchors.centerIn: parent
-                                name: card.usable ? "plus" : "x"
-                                size: 15
+                                name: card.info.icon || "app"
+                                size: 19
+                                stroke: 1.8
                                 color: card.usable ? Theme.accent : Theme.overlay
                             }
                         }
@@ -176,8 +188,7 @@ PanelWindow {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: card.usable ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onClicked: if (card.usable && root.target)
-                            PanelLayout.addItem(root.target.output, root.target.edge, card.modelData)
+                        onClicked: if (card.usable && root.target) Shell.addWidget(card.modelData)
                     }
                 }
             }

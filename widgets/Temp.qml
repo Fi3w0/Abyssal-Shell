@@ -5,12 +5,14 @@ import "../services"
 // Only shows up when the CPU runs hot, like Moonlit.
 StatChip {
     property var ctx
-    property int threshold: ctx && ctx.options && ctx.options.threshold ? ctx.options.threshold : 75
+    readonly property var opts: ctx && ctx.options ? ctx.options : ({})
+    readonly property int threshold: opts.threshold ?? 75
 
-    readonly property bool shown: SystemInfo.cpuTemp >= threshold
+    readonly property bool shown: SystemInfo.cpuTemp > 0 && (opts.display === "always" || SystemInfo.cpuTemp >= threshold)
     vertical: ctx ? ctx.vertical : false
-    active: true
+    showIcon: opts.showIcon !== false
+    label: opts.showLabel === true ? "CPU" : ""
     icon: "thermometer"
-    iconColor: Theme.warn
-    value: Math.round(SystemInfo.cpuTemp) + "°"
+    iconColor: SystemInfo.cpuTemp >= threshold ? Theme.warn : Theme.subtext
+    value: Math.round(opts.unit === "f" ? SystemInfo.cpuTemp * 9 / 5 + 32 : SystemInfo.cpuTemp) + (opts.unit === "f" ? "°F" : "°C")
 }

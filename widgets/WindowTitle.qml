@@ -11,13 +11,18 @@ Item {
     id: root
 
     property var ctx
+    readonly property var opts: ctx && ctx.options ? ctx.options : ({})
     readonly property var win: Tide.windowFor(ctx ? ctx.output : "")
-    readonly property var entry: win ? DesktopEntries.heuristicLookup(win.app_id) : null
-    readonly property string iconPath: entry && entry.icon ? Quickshell.iconPath(entry.icon, true) : ""
+    // A toplevel with no app_id (TideWM's own winit window, for one) must
+    // not reach heuristicLookup: an empty name matches whichever desktop
+    // entry lacks StartupWMClass, which is how an unrelated app's icon
+    // (Deltarune) ended up on it. Fall back to the generic icon instead.
+    readonly property string appId: win && win.app_id ? String(win.app_id) : ""
+    readonly property var entry: appId ? DesktopEntries.heuristicLookup(appId) : null
 
     readonly property bool shown: win !== null && !(ctx && ctx.vertical)
     implicitHeight: 28
-    implicitWidth: Math.min(row.implicitWidth + 26, 300)
+    implicitWidth: Math.min(row.implicitWidth + 26, opts.maxWidth ?? 300)
 
     Rectangle {
         anchors.fill: parent
@@ -30,15 +35,16 @@ Item {
         anchors { verticalCenter: parent.verticalCenter; left: parent.left; right: parent.right; leftMargin: 12; rightMargin: 13 }
         spacing: 8
 
-        IconImage {
-            visible: root.iconPath !== ""
-            source: root.iconPath
+        AppIcon {
+            id: appIcon
+            visible: root.opts.showIcon !== false && status === Image.Ready
+            iconName: root.entry ? root.entry.icon : ""
             implicitSize: 16
             asynchronous: true
             Layout.alignment: Qt.AlignVCenter
         }
         Icon {
-            visible: root.iconPath === ""
+            visible: root.opts.showIcon !== false && !appIcon.visible
             name: "app"
             size: 15
             color: Theme.subtext

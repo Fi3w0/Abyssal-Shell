@@ -4,6 +4,7 @@ import "../services"
 
 BarButton {
     property var ctx
+    iconSize: ctx && ctx.options ? (ctx.options.iconSize ?? 17) : 17
 
     icon: "power"
     iconColor: Theme.danger

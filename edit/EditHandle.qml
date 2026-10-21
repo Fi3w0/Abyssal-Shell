@@ -12,12 +12,18 @@ Rectangle {
     property string label: ""
     property bool hasOptions: false
     property bool drawOutline: true
-    signal optionsRequested()
+    // Widgets that draw their icon off-centre (Logo hugs the panel edge)
+    // report it, so the outline stays on the visible icon.
+    property real visualOffsetX: 0
+    property real visualOffsetY: 0
+    readonly property bool selected: Shell.widgetTarget !== null
+        && Shell.widgetTarget.output === panelRoot.output && Shell.widgetTarget.edge === panelRoot.edge
+        && Shell.widgetTarget.index === index
 
     radius: 9
     color: drawOutline && area.containsMouse ? Theme.alpha(Theme.cyan, 0.10) : "transparent"
     border.width: drawOutline ? 1 : 0
-    border.color: Theme.alpha(Theme.cyan, area.containsMouse ? 0.9 : 0.45)
+    border.color: selected ? Theme.accent : Theme.alpha(Theme.cyan, area.containsMouse ? 0.9 : 0.45)
 
     MouseArea {
         id: area
@@ -33,6 +39,8 @@ Rectangle {
             dragging = false
             root.panelRoot.queueRelayout()
             Shell.selectPanel(root.panelRoot.output, root.panelRoot.edge)
+            const item = root.panelRoot.config.items[root.index]
+            if (item) Shell.selectWidget(root.panelRoot.output, root.panelRoot.edge, root.index, item.id)
         }
         onPositionChanged: mouse => {
             if (!pressed) return
@@ -44,7 +52,6 @@ Rectangle {
         }
         onReleased: {
             if (dragging) root.panelRoot.finishDrag()
-            else if (root.hasOptions) root.optionsRequested()
             dragging = false
         }
     }

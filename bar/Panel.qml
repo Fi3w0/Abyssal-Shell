@@ -31,14 +31,14 @@ PanelWindow {
     readonly property real along: vertical ? height : width
     // Content sits on the screen-edge side, `gap` away from it.
     readonly property real crossStart: (edge === "top" || edge === "left") ? gap : 0
-    readonly property real radius: config.floating || islands ? Math.min(thickness / 2, 18) : 0
+    readonly property real radius: config.floating || islands ? Math.min(thickness / 2, Theme.trench ? 10 : 18) : 0
     readonly property bool editing: Shell.editing
     readonly property bool selected: Shell.isEditTarget(output, edge)
 
     // Auto-hide reveal: hover, an open menu, or edit mode keep it out.
     property bool hovered: false
     readonly property bool autohide: config.visibility === "autohide"
-    readonly property bool revealed: !autohide || hovered || editing || menu.visible || optionsPopup.visible
+    readonly property bool revealed: !autohide || hovered || editing || menu.visible
                                      || (Shell.quickSettings !== null && Shell.quickSettings.output === output)
     readonly property int hotStrip: 3
 
@@ -74,7 +74,8 @@ PanelWindow {
 
     function contextFor(item, index) {
         return { output: panel.output, edge: panel.edge, vertical: panel.vertical,
-                 thickness: panel.thickness, index: index, options: item }
+                 thickness: panel.thickness, index: index, options: item,
+                 leading: index === 0, trailing: index === config.items.length - 1 }
     }
 
     // ── Segments: groups of widgets split by spacers ────────────────────
@@ -84,7 +85,7 @@ PanelWindow {
         config.items.forEach((item, i) => {
             if (item.id === "spacer") {
                 group = null
-                out.push({ kind: "spacer", index: i })
+                out.push({ kind: "spacer", index: i, gap: Math.max(0, Math.min(200, Number(item.gap ?? 10) || 0)) })
             } else {
                 if (!group) { group = { kind: "group", items: [] }; out.push(group) }
                 group.items.push({ item: item, index: i })
@@ -124,25 +125,26 @@ PanelWindow {
             natural.push(len)
             groupsTotal += len
         }
-        const minSp = editing ? 56 : (mode === "fit" ? 10 : 8)
+        const minimums = segments.map(s => s.kind === "spacer" ? Math.max(editing ? 56 : 0, s.gap) : 0)
+        const spacerTotal = minimums.reduce((a, b) => a + b, 0)
         const pad = islands ? 0 : 10
         const full = along - 2 * gap
-        let box = mode === "fit" ? groupsTotal + spacers * minSp + 2 * pad
-                : mode === "custom" ? Math.max(groupsTotal + spacers * minSp + 2 * pad, full * config.length / 100)
+        let box = mode === "fit" ? groupsTotal + spacerTotal + 2 * pad
+                : mode === "custom" ? Math.max(groupsTotal + spacerTotal + 2 * pad, full * config.length / 100)
                 : full
         box = Math.min(box, full)
         const start = gap + (mode === "fit" || mode === "custom" ? alignIn(full, box) : 0)
         const inner = box - 2 * pad
-        const free = Math.max(0, inner - groupsTotal - spacers * minSp)
+        const free = Math.max(0, inner - groupsTotal - spacerTotal)
 
         const out = natural.map((len, i) => segments[i].kind === "spacer"
-            ? minSp + (mode === "fit" ? 0 : free / Math.max(1, spacers)) : len)
+            ? minimums[i] + (mode === "fit" ? 0 : free / Math.max(1, spacers)) : len)
 
         // left · spacer · middle · spacer · right: keep the middle centred.
         const kinds = segments.map(s => s.kind).join(",")
         if (mode !== "fit" && kinds === "group,spacer,group,spacer,group" && natural[2] > 0) {
             const rest = inner - natural[0] - natural[2] - natural[4]
-            const left = Math.max(minSp, Math.min((inner - natural[2]) / 2 - natural[0], rest - minSp))
+            const left = Math.max(minimums[1], Math.min((inner - natural[2]) / 2 - natural[0], rest - minimums[3]))
             out[1] = left
             out[3] = rest - left
         }
@@ -216,15 +218,6 @@ PanelWindow {
         drag.active = false
         drag.target = null
         if (t) PanelLayout.moveItem(output, edge, drag.from, t.index)
-    }
-
-    // ── Widget options popup (edit mode) ────────────────────────────────
-    property var optionsFor: null      // { index, id, item }
-    function openOptions(anchorItem, index, item) {
-        if (Widgets.options(item.id).length === 0) return
-        optionsFor = { index: index, id: item.id, item: item }
-        optionsPopup.anchor.item = anchorItem
-        optionsPopup.visible = true
     }
 
     // ── Content, slid off-screen while auto-hidden ──────────────────────
@@ -361,7 +354,9 @@ PanelWindow {
                     anchors.centerIn: parent
                     rows: panel.vertical ? -1 : 1
                     columns: panel.vertical ? 1 : -1
-                    spacing: panel.editing ? (panel.vertical ? 8 : 10) : (panel.vertical ? 4 : 7)
+                    // Negative spacing rides on the cells' own padding.
+                    spacing: panel.editing ? Math.max(panel.config.spacing, panel.vertical ? 8 : 10)
+                        : Math.max(0, panel.config.spacing)
                     verticalItemAlignment: Grid.AlignVCenter
                     horizontalItemAlignment: Grid.AlignHCenter
 
@@ -376,16 +371,29 @@ PanelWindow {
                             // Hidden right now (no battery, CPU not hot): a
                             // named chip in edit mode, nothing otherwise.
                             readonly property bool live: loader.status === Loader.Ready && loader.item !== null
-                                                         && loader.item.shown !== false && Widgets.available(item.id)
+                                                         && loader.item.shown !== false && item.enabled !== false && Widgets.available(item.id)
+                            // Per-widget gap: pads both sides, so two neighbours
+                            // get one padding each plus the panel spacing.
+                            // Negative values pull neighbours together; each
+                            // side pads itself so both widgets share the gap.
+                            readonly property int ownGap: Math.max(-16, Math.min(16,
+                                item.spacing !== undefined && Number.isFinite(Number(item.spacing)) ? Number(item.spacing) : 0))
+                            readonly property real panelPad: panel.config.spacing < 0 ? panel.config.spacing / 2 : 0
+                            readonly property real pad: panelPad + ownGap
 
                             visible: live || (panel.editing && item.id !== "")
-                            implicitWidth: live ? loader.implicitWidth : (panel.vertical ? 30 : chip.implicitWidth + 16)
-                            implicitHeight: live ? loader.implicitHeight : (panel.vertical ? chip.implicitWidth + 16 : 24)
+                            implicitWidth: live
+                                ? Math.max(4, loader.implicitWidth + (panel.vertical ? 0 : pad * 2))
+                                : (panel.vertical ? 30 : chip.implicitWidth + 16)
+                            implicitHeight: live
+                                ? Math.max(4, loader.implicitHeight + (panel.vertical ? pad * 2 : 0))
+                                : (panel.vertical ? chip.implicitWidth + 16 : 24)
                             opacity: drag.active && drag.from === index ? 0.3 : 1
 
                             Loader {
                                 id: loader
                                 visible: cell.live
+                                anchors.centerIn: parent
                                 Component.onCompleted: {
                                     const url = Widgets.url(cell.item.id)
                                     if (url === "") {
@@ -414,13 +422,17 @@ PanelWindow {
 
                             EditHandle {
                                 visible: panel.editing
+                                readonly property real shift: cell.live && loader.item
+                                    && loader.item.visualOffsetX !== undefined ? loader.item.visualOffsetX : 0
                                 anchors.fill: parent
-                                anchors.margins: -3
+                                anchors.leftMargin: -3 + shift
+                                anchors.rightMargin: -3 - shift
+                                anchors.topMargin: -3
+                                anchors.bottomMargin: -3
                                 panelRoot: panel
                                 index: cell.index
                                 label: Widgets.name(cell.item.id)
                                 hasOptions: Widgets.options(cell.item.id).length > 0
-                                onOptionsRequested: panel.openOptions(cell, cell.index, cell.item)
                             }
                         }
                     }
@@ -464,65 +476,6 @@ PanelWindow {
         config: panel.config
         output: panel.output
         visible: panel.selected && !Shell.pickingPosition
-    }
-
-    PopupWindow {
-        id: optionsPopup
-        anchor.edges: panel.edge === "bottom" ? Edges.Top : panel.edge === "left" ? Edges.Right
-                    : panel.edge === "right" ? Edges.Left : Edges.Bottom
-        anchor.gravity: panel.edge === "bottom" ? Edges.Top : panel.edge === "left" ? Edges.Right
-                      : panel.edge === "right" ? Edges.Left : Edges.Bottom
-        anchor.margins.top: 10
-        anchor.margins.bottom: 10
-        anchor.margins.left: 10
-        anchor.margins.right: 10
-        grabFocus: true
-        color: "transparent"
-        implicitWidth: optCol.implicitWidth + 28
-        implicitHeight: optCol.implicitHeight + 24
-
-        Rectangle {
-            anchors.fill: parent
-            radius: 16
-            color: Theme.glassStrong
-            border.width: 1
-            border.color: Theme.alpha(Theme.cyan, 0.35)
-
-            Column {
-                id: optCol
-                anchors.centerIn: parent
-                spacing: 10
-
-                Text {
-                    text: panel.optionsFor ? Widgets.name(panel.optionsFor.id) : ""
-                    color: Theme.text
-                    font { family: Theme.font; pixelSize: 13; bold: true }
-                }
-                Repeater {
-                    model: panel.optionsFor ? Widgets.options(panel.optionsFor.id) : []
-                    delegate: Row {
-                        required property var modelData
-                        spacing: 10
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 70
-                            text: modelData.label
-                            color: Theme.subtext
-                            font { family: Theme.font; pixelSize: 11 }
-                        }
-                        Segmented {
-                            options: modelData.values.map(v => ({ value: String(v[0]), label: v[1] }))
-                            value: String(Widgets.optionValue(panel.optionsFor.item, modelData))
-                            onPicked: v => {
-                                const raw = modelData.values.find(x => String(x[0]) === v)[0]
-                                PanelLayout.setItemOption(panel.output, panel.edge, panel.optionsFor.index, modelData.key, raw)
-                                optionsPopup.visible = false
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     PopupWindow {

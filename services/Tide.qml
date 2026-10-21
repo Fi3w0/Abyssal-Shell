@@ -17,6 +17,9 @@ Singleton {
     property var focusedWindow: null
     // window_ids, most recently focused first; picks each monitor's title
     property var focusOrder: []
+    // { current_idx, names, codes } from `tidectl keyboard-layouts`; null
+    // until a compositor with the query answers (older TideWM, or none).
+    property var keyboardLayout: null
 
     readonly property string focusedOutput: focusedWindow ? focusedWindow.output : ""
 
@@ -27,9 +30,9 @@ Singleton {
     }
 
     // Workspaces 1..max(5, highest known) for one output, Moonlit-style.
-    function workspacesFor(output) {
+    function workspacesFor(output, minimum) {
         const known = {}
-        let highest = 5
+        let highest = minimum || 5
         for (const w of workspaces) {
             if (w.output !== output) continue
             known[w.workspace] = w
@@ -80,6 +83,13 @@ Singleton {
         onExited: code => { if (code !== 0) root.action(["workspace", fallback]) }
     }
 
+    function cycleLayout(forward) {
+        action([forward ? "switch-layout:next" : "switch-layout:prev"])
+    }
+    function setLayout(code) {
+        action(["switch-layout:" + code])
+    }
+
     function remember(id) {
         if (id === undefined || id === null) return
         const next = focusOrder.filter(x => x !== id)
@@ -98,6 +108,7 @@ Singleton {
                 try {
                     const ev = JSON.parse(line)
                     if (ev.event === "focus-changed" && ev.data) root.remember(ev.data.window_id)
+                    if (ev.event === "layout-changed" && ev.data) root.keyboardLayout = ev.data
                 } catch (e) {}
                 refreshDebounce.restart()
             }
@@ -105,7 +116,7 @@ Singleton {
         // TideWM restarted or the socket went away: retry quietly.
         onExited: retry.start()
     }
-    Timer { id: retry; interval: 2000; onTriggered: { subscriber.running = true; root.refresh() } }
+    Timer { id: retry; interval: 2000; onTriggered: { subscriber.running = true; root.refresh(); layoutQuery.running = true } }
 
     Timer { id: refreshDebounce; interval: 40; onTriggered: root.refresh() }
 
@@ -144,5 +155,22 @@ Singleton {
         }
     }
 
-    Component.onCompleted: refresh()
+    // Queried on start and after a reconnect only; changes arrive as
+    // `layout-changed` events, so no polling.
+    Process {
+        id: layoutQuery
+        command: ["tidectl", "--json", "keyboard-layouts"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const r = JSON.parse(text)
+                    root.keyboardLayout = r.ok ? r.data : null
+                } catch (e) {
+                    root.keyboardLayout = null
+                }
+            }
+        }
+    }
+
+    Component.onCompleted: { refresh(); layoutQuery.running = true }
 }

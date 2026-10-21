@@ -14,14 +14,21 @@ PanelWindow {
     // `screen` makes a binding loop.
     required property string output
     readonly property var free: PanelLayout.freeEdges(output)
+    readonly property bool noPanels: Quickshell.screens.every(s => PanelLayout.panelsFor(s.name).length === 0)
+    readonly property var bottomPanel: PanelLayout.panelsFor(output).find(p => p.edge === "bottom")
+    // Always-visible panels already reserve their space with the compositor.
+    // Auto-hide and windows-below panels are revealed in edit mode but do
+    // not reserve space, so account for their full height here.
+    readonly property real bottomClearance: bottomPanel && bottomPanel.visibility !== "always"
+        ? bottomPanel.size + (bottomPanel.floating ? 6 : 0) : 0
     property bool presetsOpen: false
     readonly property bool undo: Shell.removedPanel !== null && Shell.removedPanel.output === output
 
-    visible: Shell.editing && !Shell.pickingPosition
+    visible: (Shell.editing || noPanels) && !Shell.pickingPosition
     WlrLayershell.namespace: "abyssal-edit-pill"
     WlrLayershell.layer: WlrLayer.Overlay
     anchors.bottom: true
-    margins.bottom: 16
+    margins.bottom: 16 + bottomClearance
     exclusiveZone: 0
     color: "transparent"
     implicitWidth: pill.implicitWidth
@@ -31,8 +38,8 @@ PanelWindow {
     Rectangle {
         id: pill
         anchors.fill: parent
-        implicitWidth: row.implicitWidth + 24
-        implicitHeight: row.implicitHeight + 16
+        implicitWidth: (Shell.editing ? row.implicitWidth : recovery.implicitWidth) + 24
+        implicitHeight: (Shell.editing ? row.implicitHeight : recovery.implicitHeight) + 16
         radius: 26
         color: Theme.glassStrong
         border.width: 1
@@ -40,12 +47,13 @@ PanelWindow {
 
         RowLayout {
             id: row
+            visible: Shell.editing
             anchors.centerIn: parent
-            spacing: 10
+            spacing: 8
 
             Rectangle { implicitWidth: 8; implicitHeight: 8; radius: 4; color: Theme.cyan }
             Text {
-                text: root.undo ? "Panel removed" : "Editing panels on " + root.output
+                text: root.undo ? "Panel removed" : "Editing · " + root.output
                 color: Theme.text
                 font { family: Theme.font; pixelSize: 12 }
             }
@@ -87,6 +95,23 @@ PanelWindow {
             TextButton { visible: root.presetsOpen; text: "Cancel"; onClicked: root.presetsOpen = false }
 
             TextButton { text: "Done"; icon: "check"; accent: true; onClicked: Shell.setEditing(false) }
+        }
+
+        RowLayout {
+            id: recovery
+            visible: !Shell.editing
+            anchors.centerIn: parent
+            TextButton {
+                text: "Add panel"
+                icon: "plus"
+                onClicked: {
+                    Shell.setEditing(true)
+                    const edge = root.free[0]
+                    if (!edge) return
+                    PanelLayout.addPanel(root.output, edge)
+                    Shell.selectPanel(root.output, edge)
+                }
+            }
         }
     }
 }

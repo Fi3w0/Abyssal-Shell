@@ -6,8 +6,8 @@ import "../services"
 BarButton {
     property var ctx
 
-    readonly property bool shown: SystemInfo.recording
+    readonly property bool shown: SystemInfo.recording || (ctx && ctx.options && ctx.options.always === true)
     icon: "record"
-    iconColor: Theme.rose
+    iconColor: SystemInfo.recording ? Theme.rose : Theme.overlay
     onClicked: Notifications.push("Abyssal", "Recording active", "A screen recording app is running", "")
 }

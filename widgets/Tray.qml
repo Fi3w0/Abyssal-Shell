@@ -12,10 +12,12 @@ Grid {
 
     property var ctx
     readonly property bool vertical: ctx ? ctx.vertical : false
+    readonly property var opts: ctx && ctx.options ? ctx.options : ({})
+    readonly property int iconSize: opts.iconSize ?? 18
 
     rows: vertical ? -1 : 1
     columns: vertical ? 1 : -1
-    spacing: 3
+    spacing: opts.spacing ?? 3
     readonly property bool shown: repeater.count > 0
 
     Repeater {
@@ -26,8 +28,8 @@ Grid {
             id: entry
             required property var modelData
 
-            implicitWidth: 28
-            implicitHeight: 28
+            implicitWidth: Math.max(28, root.iconSize + 10)
+            implicitHeight: Math.max(28, root.iconSize + 10)
 
             Rectangle {
                 anchors.fill: parent
@@ -36,10 +38,10 @@ Grid {
                 Behavior on color { ColorAnimation { duration: Theme.anim } }
             }
 
-            IconImage {
+            HiDpiIcon {
                 id: icon
                 anchors.centerIn: parent
-                implicitSize: 18
+                implicitSize: root.iconSize
                 asynchronous: true
                 source: entry.modelData.icon
                 visible: status === Image.Ready
