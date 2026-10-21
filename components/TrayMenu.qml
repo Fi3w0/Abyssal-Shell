@@ -14,7 +14,9 @@ PopupWindow {
     property var current: handle
     function enter(h) { stack = stack.concat([h]); current = h }
     function back() { stack = stack.slice(0, -1); current = stack.length ? stack[stack.length - 1] : pop.handle }
-    onVisibleChanged: if (!visible) { stack = []; current = pop.handle }
+    // Reset after the event that closed it, never while Qt is still
+    // delivering that click to the rows this reset destroys.
+    onVisibleChanged: if (!visible) Qt.callLater(() => { if (!pop.visible) { pop.stack = []; pop.current = pop.handle } })
 
     grabFocus: true
     implicitWidth: 248
@@ -22,6 +24,11 @@ PopupWindow {
     color: "transparent"
 
     QsMenuOpener { id: opener; menu: pop.current }
+
+    // Accept every button: Qt (6.8+) turns a click nothing accepted into a
+    // context-menu event, and delivering that while the popup's items are
+    // being torn down crashed in QQuickItem::mapToScene.
+    MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }
 
     Rectangle {
         id: bg

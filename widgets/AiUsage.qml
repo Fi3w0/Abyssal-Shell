@@ -130,6 +130,11 @@ Item {
         implicitWidth: hoverContent.implicitWidth + 24
         implicitHeight: hoverContent.implicitHeight + 20
 
+        // Accept every button: Qt (6.8+) turns a click nothing accepted into a
+        // context-menu event, and delivering that while the popup's items are
+        // being torn down crashed in QQuickItem::mapToScene.
+        MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }
+
         Rectangle {
             anchors.fill: parent
             color: Theme.glassStrong
