@@ -36,10 +36,18 @@ PanelWindow {
         }
     }
 
+    // The compositor ignores activation while an exclusive-keyboard layer
+    // surface is mapped (a lock-screen guard), and this switcher is one: so
+    // the chosen window is activated only once the switcher is gone.
+    property var pending: null
     function choose() {
-        const t = list[selected]
+        pending = list[selected] || null
         Shell.switcherOn = ""
-        if (t) t.activate()
+    }
+    onShownChanged: if (!shown && pending) {
+        const t = pending
+        pending = null
+        Qt.callLater(() => t.activate())
     }
 
     WlrLayershell.namespace: "abyssal-switcher"
