@@ -1,32 +1,40 @@
 import QtQuick
+import Quickshell
 import "../components"
 import "../services"
 
-// Claude Code / Codex usage, in the bar's CPU/GPU style: a short label and
-// the 5-hour window's percentage (accent, amber past 70%, rose past 90%),
-// with the weekly window as a thin line underneath. Close to the limit the
-// number turns into the time until it resets. A dot marks a service
-// incident. Opens the usage panel under the widget.
+// Recognizable provider marks with a small usage underline per tool.
 Item {
     id: root
     property var ctx
     readonly property var opts: ctx && ctx.options ? ctx.options : ({})
+    readonly property bool vertical: ctx ? ctx.vertical : false
 
     readonly property var tools: [
-        { key: "claude", tag: "CC", src: AiUsage.claude, status: AiUsage.status.claude },
-        { key: "codex", tag: "CX", src: AiUsage.codex, status: AiUsage.status.openai }
+        { key: "claude", icon: "claude", name: "Claude Code", src: AiUsage.claude, status: AiUsage.status.claude },
+        { key: "codex", icon: "openai", name: "Codex", src: AiUsage.codex, status: AiUsage.status.openai }
     ].filter(t => t.src && (opts.show === undefined || opts.show === "both" || opts.show === t.key))
 
     readonly property bool shown: tools.length > 0
     readonly property bool open: Shell.detail !== null && Shell.detail.page === "usage" && Shell.detail.output === (ctx ? ctx.output : "")
     readonly property bool weekly: opts.weekly !== false
 
-    // Seconds, refreshed while visible, for the reset countdown.
-    property real now: Date.now() / 1000
-    Timer { running: root.visible; interval: 30000; repeat: true; triggeredOnStart: true; onTriggered: root.now = Date.now() / 1000 }
+    implicitWidth: vertical ? 32 : meters.implicitWidth + 12
+    implicitHeight: vertical ? meters.implicitHeight + 8 : 28
+    readonly property real minimumContentWidth: meters.implicitWidth + 2
+    readonly property real minimumContentHeight: meters.implicitHeight + 2
 
-    implicitWidth: row.implicitWidth + 16
-    implicitHeight: 28
+    function reading(src, name) {
+        const window = src && src.windows ? src.windows.find(w => w.name === name) : null
+        return window && typeof window.used === "number" && Number.isFinite(window.used)
+            ? Math.max(0, Math.min(100, window.used)) : null
+    }
+
+    function summary(src) {
+        const five = reading(src, "5 hours"), week = reading(src, "Week")
+        return "5h  " + (five === null ? "unavailable" : Math.round(five) + "% used")
+            + "   ·   Week  " + (week === null ? "unavailable" : Math.round(week) + "% used")
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -35,86 +43,135 @@ Item {
         Behavior on color { ColorAnimation { duration: Theme.anim } }
     }
 
-    Row {
-        id: row
+    Grid {
+        id: meters
         anchors.centerIn: parent
-        spacing: 12
+        columns: root.vertical ? 1 : Math.max(1, root.tools.length)
+        spacing: 6
 
         Repeater {
             model: root.tools
-            delegate: Row {
+            delegate: Item {
                 id: tool
                 required property var modelData
-                required property int index
-                readonly property var five: modelData.src.windows.find(w => w.name === "5 hours") || null
-                readonly property var week: modelData.src.windows.find(w => w.name === "Week") || null
-                readonly property real used: five ? five.used : 0
-                readonly property bool capped: used >= 95 && five && five.resets_at
+                readonly property var used: root.reading(modelData.src, "5 hours")
+                readonly property var weekUsed: root.reading(modelData.src, "Week")
                 readonly property color tint: used >= 90 ? Theme.danger : used >= 70 ? Theme.warn : Theme.accent
                 readonly property string incident: modelData.status ? modelData.status.indicator : "none"
-                spacing: 5
-
-                Item {
-                    anchors.verticalCenter: parent.verticalCenter
-                    implicitWidth: tagText.implicitWidth
-                    implicitHeight: tagText.implicitHeight
-                    Text {
-                        id: tagText
-                        text: tool.modelData.tag
-                        color: Theme.overlay
-                        font { family: Theme.monoFont; pixelSize: 10; bold: true; letterSpacing: 0.5 }
-                    }
-                    // Service incident (minor: amber, major: rose).
-                    Rectangle {
-                        visible: tool.incident !== "none" && tool.incident !== "unknown"
-                        anchors { left: parent.right; top: parent.top; leftMargin: 1; topMargin: -3 }
-                        width: 5; height: 5; radius: 2.5
-                        color: tool.incident === "minor" ? Theme.warn : Theme.danger
-                    }
+                width: 16
+                height: root.weekly ? 23 : 20
+                Icon {
+                    name: tool.modelData.icon
+                    size: 16
+                    color: Theme.subtext
                 }
-
-                Column {
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 2
-                    Text {
-                        id: value
-                        text: tool.capped ? root.span(tool.five.resets_at - root.now) : Math.round(tool.used) + "%"
-                        color: tool.tint
-                        font { family: Theme.monoFont; pixelSize: 11; bold: true }
-                        Behavior on color { ColorAnimation { duration: 300 } }
-                    }
-                    // Weekly window: a thin track under the number.
+                Item {
+                    y: 18
+                    width: 16
+                    height: root.weekly ? 5 : 2
+                    // 5-hour window
                     Rectangle {
-                        visible: root.weekly && tool.week !== null
-                        width: Math.max(value.implicitWidth, 22)
-                        height: 2
-                        radius: 1
+                        width: parent.width; height: 2; radius: 1
                         color: Theme.alpha(Theme.text, 0.12)
                         Rectangle {
-                            width: parent.width * Math.min(1, (tool.week ? tool.week.used : 0) / 100)
-                            height: parent.height
-                            radius: 1
-                            color: (tool.week ? tool.week.used : 0) >= 90 ? Theme.danger : Theme.subtext
+                            width: tool.used === null ? 0 : parent.width * tool.used / 100
+                            height: parent.height; radius: 1
+                            color: tool.tint
+                            Behavior on width { NumberAnimation { duration: 400; easing.type: Easing.OutCubic } }
+                            Behavior on color { ColorAnimation { duration: 300 } }
+                        }
+                        Text {
+                            visible: tool.used === null
+                            anchors.centerIn: parent
+                            text: "—"
+                            color: Theme.overlay
+                            font.pixelSize: 9
+                        }
+                    }
+                    // Week
+                    Rectangle {
+                        visible: root.weekly
+                        y: 4
+                        width: parent.width; height: 1; radius: 0.5
+                        color: Theme.alpha(Theme.text, 0.12)
+                        Rectangle {
+                            width: tool.weekUsed === null ? 0 : parent.width * tool.weekUsed / 100
+                            height: parent.height; radius: 0.5
+                            color: tool.weekUsed >= 90 ? Theme.danger : tool.weekUsed >= 70 ? Theme.warn : Theme.subtext
                             Behavior on width { NumberAnimation { duration: 400; easing.type: Easing.OutCubic } }
                         }
+                        opacity: tool.weekUsed === null ? 0.35 : 1
+                    }
+                    Rectangle {
+                        visible: tool.incident !== "none" && tool.incident !== "unknown"
+                        anchors { left: parent.right; top: parent.top; leftMargin: 1; topMargin: -18 }
+                        width: 4; height: 4; radius: 2
+                        color: tool.incident === "minor" ? Theme.warn : Theme.danger
                     }
                 }
             }
         }
     }
 
-    function span(sec) {
-        sec = Math.max(0, Math.round(sec))
-        const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60)
-        return h ? h + "h" + String(m).padStart(2, "0") : m + "m"
+    Timer {
+        id: hoverDelay
+        interval: 450
+        onTriggered: hoverCard.visible = true
     }
+    PopupWindow {
+        id: hoverCard
+        anchor.item: root
+        anchor.edges: root.ctx && root.ctx.edge === "bottom" ? Edges.Top
+            : root.ctx && root.ctx.edge === "left" ? Edges.Right
+            : root.ctx && root.ctx.edge === "right" ? Edges.Left : Edges.Bottom
+        anchor.gravity: anchor.edges
+        anchor.margins { top: 8; bottom: 8; left: 8; right: 8 }
+        color: "transparent"
+        implicitWidth: hoverContent.implicitWidth + 24
+        implicitHeight: hoverContent.implicitHeight + 20
+
+        Rectangle {
+            anchors.fill: parent
+            color: Theme.glassStrong
+            radius: Theme.controlRadius
+            border { width: 1; color: Theme.hairline }
+            Column {
+                id: hoverContent
+                anchors { centerIn: parent }
+                spacing: 10
+                Repeater {
+                    model: root.tools
+                    delegate: Column {
+                        required property var modelData
+                        spacing: 3
+                        Text {
+                            text: modelData.name
+                            color: Theme.text
+                            font { family: Theme.font; pixelSize: 11; bold: true }
+                        }
+                        Text {
+                            text: root.summary(modelData.src)
+                            color: Theme.subtext
+                            font { family: Theme.font; pixelSize: 10 }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    onOpenChanged: { hoverDelay.stop(); hoverCard.visible = false }
+    onVisibleChanged: if (!visible) { hoverDelay.stop(); hoverCard.visible = false }
 
     MouseArea {
         id: area
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
+        onEntered: if (!root.open && !Shell.editing) hoverDelay.restart()
+        onExited: { hoverDelay.stop(); hoverCard.visible = false }
         onClicked: {
+            hoverDelay.stop()
+            hoverCard.visible = false
             const p = root.mapToItem(null, root.width / 2, root.height / 2)
             Shell.toggleDetail(root.ctx.output, root.ctx.edge, "usage", root.ctx.vertical ? p.y : p.x, root.ctx.thickness)
         }
