@@ -380,13 +380,21 @@ PanelWindow {
                                 item.spacing !== undefined && Number.isFinite(Number(item.spacing)) ? Number(item.spacing) : 0))
                             readonly property real panelPad: panel.config.spacing < 0 ? panel.config.spacing / 2 : 0
                             readonly property real pad: panelPad + ownGap
+                            readonly property real minimumContentWidth: loader.item && loader.item.minimumContentWidth !== undefined
+                                ? loader.item.minimumContentWidth : loader.implicitWidth
+                            readonly property real minimumContentHeight: loader.item && loader.item.minimumContentHeight !== undefined
+                                ? loader.item.minimumContentHeight : loader.implicitHeight
 
                             visible: live || (panel.editing && item.id !== "")
+                            // Negative padding shrinks the slot, including its
+                            // input area. A child's original MouseArea must
+                            // never reach over the neighbouring widget.
+                            clip: !panel.editing
                             implicitWidth: live
-                                ? Math.max(4, loader.implicitWidth + (panel.vertical ? 0 : pad * 2))
+                                ? Math.max(minimumContentWidth, loader.implicitWidth + (panel.vertical ? 0 : pad * 2))
                                 : (panel.vertical ? 30 : chip.implicitWidth + 16)
                             implicitHeight: live
-                                ? Math.max(4, loader.implicitHeight + (panel.vertical ? pad * 2 : 0))
+                                ? Math.max(minimumContentHeight, loader.implicitHeight + (panel.vertical ? pad * 2 : 0))
                                 : (panel.vertical ? chip.implicitWidth + 16 : 24)
                             opacity: drag.active && drag.from === index ? 0.3 : 1
 

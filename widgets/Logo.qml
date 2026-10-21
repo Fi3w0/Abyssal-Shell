@@ -20,6 +20,8 @@ Item {
 
     implicitWidth: Math.max(28, iconPx + 14)
     implicitHeight: Math.max(28, iconPx + 8)
+    readonly property real minimumContentWidth: iconPx + 2 * Math.abs(visualOffsetX) + 2
+    readonly property real minimumContentHeight: iconPx + 2 * Math.abs(visualOffsetY) + 2
 
     CustomIcon {
         anchors.centerIn: parent

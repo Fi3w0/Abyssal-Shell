@@ -14,6 +14,8 @@ Item {
 
     implicitWidth: row.implicitWidth + 16
     implicitHeight: 28
+    readonly property real minimumContentWidth: row.implicitWidth + 2
+    readonly property real minimumContentHeight: row.implicitHeight + 2
 
     Rectangle {
         anchors.fill: parent

@@ -21,6 +21,8 @@ Item {
 
     implicitHeight: vertical ? col.implicitHeight + 12 : 28
     implicitWidth: vertical ? 32 : row.implicitWidth + 22
+    readonly property real minimumContentWidth: vertical ? col.implicitWidth + 2 : row.implicitWidth + 2
+    readonly property real minimumContentHeight: vertical ? col.implicitHeight + 2 : row.implicitHeight + 2
 
     Rectangle {
         anchors.fill: parent
@@ -57,6 +59,7 @@ Item {
             Layout.alignment: Qt.AlignVCenter
         }
         Text {
+            visible: root.value !== ""
             text: root.value
             color: root.active ? Theme.accent : root.valueColor
             font { family: Theme.font; pixelSize: 11; bold: true }

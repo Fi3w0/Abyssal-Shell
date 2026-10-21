@@ -15,6 +15,8 @@ Item {
 
     implicitWidth: Math.max(28, iconPx + 12)
     implicitHeight: Math.max(28, iconPx + 12)
+    readonly property real minimumContentWidth: iconPx + 2
+    readonly property real minimumContentHeight: iconPx + 2
 
     Rectangle {
         anchors.fill: parent

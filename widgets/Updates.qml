@@ -16,6 +16,8 @@ Item {
     readonly property color tint: open ? Theme.accent : Updates.important ? Theme.rose : Updates.count ? Theme.accent : Theme.subtext
 
     implicitWidth: row.implicitWidth + 16
+    readonly property real minimumContentWidth: row.implicitWidth + 2
+    readonly property real minimumContentHeight: row.implicitHeight + 2
     implicitHeight: 28
 
     Rectangle {

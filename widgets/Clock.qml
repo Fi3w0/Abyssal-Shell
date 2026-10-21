@@ -31,6 +31,8 @@ Item {
 
     implicitWidth: vertical ? 32 : (withDate ? dated.implicitWidth + 12 : row.implicitWidth + 12)
     implicitHeight: vertical ? col.implicitHeight + 8 : (withDate ? dated.implicitHeight + 4 : 28)
+    readonly property real minimumContentWidth: (vertical ? col.implicitWidth : withDate ? dated.implicitWidth : row.implicitWidth) + 2
+    readonly property real minimumContentHeight: (vertical ? col.implicitHeight : withDate ? dated.implicitHeight : row.implicitHeight) + 2
 
     RowLayout {
         id: row

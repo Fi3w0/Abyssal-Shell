@@ -21,6 +21,7 @@ Item {
 
     implicitWidth: 30
     implicitHeight: 28
+    readonly property real minimumContentWidth: layoutText.implicitWidth + 2
 
     Rectangle {
         anchors.fill: parent
@@ -29,6 +30,7 @@ Item {
     }
 
     Text {
+        id: layoutText
         anchors.centerIn: parent
         text: root.label
         color: area.containsMouse ? Theme.accent : Theme.subtext
