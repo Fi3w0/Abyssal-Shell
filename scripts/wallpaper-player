@@ -1,0 +1,332 @@
+#!/usr/bin/env python3
+"""One owned video player per output, native/static images and awww transitions.
+
+The shell exchanges JSON lines with this worker. Old wallpaper snapshots
+are shown below application windows until the new background is ready.
+No shell commands are assembled from filenames or monitor names.
+"""
+import hashlib
+import json
+import os
+from pathlib import Path
+import selectors
+import shutil
+import signal
+import socket
+import subprocess
+import sys
+import tempfile
+import time
+
+
+NAMESPACE = "abyssal"
+TRANSITIONS = {"none", "fade", "wipe", "wave", "grow", "center", "outer", "left", "right", "top", "bottom", "random"}
+try:
+    PROFILES = json.loads((Path(__file__).resolve().parent.parent / "wallpaper/transitions.json").read_text())
+except (OSError, ValueError):
+    PROFILES = {}
+
+
+def emit(**message):
+    print(json.dumps(message), flush=True)
+
+
+def command(args, timeout=5):
+    try:
+        return subprocess.run(args, capture_output=True, text=True, timeout=timeout)
+    except (OSError, subprocess.SubprocessError) as error:
+        return subprocess.CompletedProcess(args, 1, "", str(error))
+
+
+def ipc(path, args, timeout=1):
+    with socket.socket(socket.AF_UNIX) as client:
+        client.settimeout(timeout)
+        client.connect(str(path))
+        client.sendall((json.dumps({"command": args, "request_id": 1}) + "\n").encode())
+        data = b""
+        while True:
+            chunk = client.recv(65536)
+            if not chunk:
+                raise OSError("Video player closed its socket")
+            data += chunk
+            while b"\n" in data:
+                line, data = data.split(b"\n", 1)
+                response = json.loads(line)
+                if response.get("request_id") == 1:
+                    if response.get("error") != "success":
+                        raise OSError(response.get("error", "Video command failed"))
+                    return response.get("data")
+
+
+def image_command(config):
+    recipe = PROFILES.get(config.get("preset"), {})
+    transition = recipe.get("type", config.get("transition", "fade"))
+    if transition not in TRANSITIONS:
+        transition = "fade"
+    requested_duration = float(config.get("duration", 0.6))
+    if requested_duration <= 0:
+        transition = "none"
+    duration = max(0.1, min(3, requested_duration))
+    args = ["awww", "img", "--namespace", NAMESPACE, "--outputs", config["output"],
+            "--resize", "fit" if config.get("fit") == "fit" else "crop",
+            "--transition-type", transition, "--transition-duration", str(duration),
+            "--transition-fps", "60"]
+    for key, flag in (("angle", "--transition-angle"), ("wave", "--transition-wave"), ("position", "--transition-pos")):
+        if key in recipe:
+            args += [flag, str(recipe[key])]
+    return args + [config["source"]]
+
+
+def render_key(config):
+    keys = ["output", "source", "kind", "fit"]
+    keys += ["hwdec", "options"] if config.get("kind") == "video" else ["imageBackend"]
+    return tuple(config.get(key) for key in keys)
+
+
+def prune_leftovers():
+    """Remove the socket and empty temp dir a killed worker left behind.
+
+    Quickshell destroys an output worker without SIGTERM when the shell
+    reloads or an output hotplugs, so `Player.run`'s own `finally` never
+    runs and one `abyssal-wallpaper-*.sock` plus one empty
+    `abyssal-wallpaper-*` temp dir accumulate per output per reload in
+    $XDG_RUNTIME_DIR. A socket is only removed when nothing answers on it,
+    so a live player is never touched; a temp dir only once it is 15 minutes
+    old and empty (snapshot() recreates it on demand anyway).
+    """
+    runtime = os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir()
+    for entry in Path(runtime).glob("abyssal-wallpaper-*"):
+        try:
+            if entry.name.endswith(".sock"):
+                with socket.socket(socket.AF_UNIX) as probe:
+                    probe.settimeout(0.2)
+                    try:
+                        probe.connect(str(entry))
+                    except OSError:
+                        entry.unlink(missing_ok=True)
+                continue
+            if not entry.is_dir() or entry.stat().st_uid != os.getuid():
+                continue
+            if time.time() - entry.stat().st_mtime > 900 and not any(entry.iterdir()):
+                entry.rmdir()
+        except OSError:
+            pass
+
+
+def cleanup():
+    """Remove only this user's old Abyssal players on this Wayland display."""
+    prune_leftovers()
+    display = os.environ.get("WAYLAND_DISPLAY", "")
+    stopping = []
+    for proc in Path("/proc").iterdir():
+        if not proc.name.isdigit() or int(proc.name) == os.getpid():
+            continue
+        try:
+            if proc.stat().st_uid != os.getuid():
+                continue
+            args = (proc / "cmdline").read_bytes().split(b"\0")
+            if not args or os.path.basename(os.fsdecode(args[0])) != "mpvpaper":
+                continue
+            if not any(b"input-ipc-server=" in arg and b"abyssal-wallpaper-" in arg for arg in args):
+                continue
+            env = (proc / "environ").read_bytes().split(b"\0")
+            if os.fsencode("WAYLAND_DISPLAY=" + display) not in env:
+                continue
+            os.kill(int(proc.name), signal.SIGTERM)
+            stopping.append(proc)
+        except (OSError, ValueError):
+            pass
+    deadline = time.monotonic() + 2
+    while any(proc.exists() for proc in stopping) and time.monotonic() < deadline:
+        time.sleep(0.05)
+    available = bool(shutil.which("awww") and shutil.which("awww-daemon"))
+    if available:
+        command(["awww", "kill", "--namespace", NAMESPACE])
+    emit(awww=available)
+
+
+class Player:
+    def __init__(self, initial):
+        self.current = None
+        self.pending = initial
+        self.video = None
+        self.sequence = 0
+        self.selector = selectors.DefaultSelector()
+        self.selector.register(sys.stdin, selectors.EVENT_READ)
+        self.buffer = b""
+        runtime = os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir()
+        self.temp = tempfile.TemporaryDirectory(prefix="abyssal-wallpaper-", dir=runtime)
+        # A retiring worker must never unlink its successor's IPC socket.
+        token = hashlib.sha256((os.environ.get("WAYLAND_DISPLAY", "") + initial["output"] + str(os.getpid())).encode()).hexdigest()[:16]
+        self.socket = Path(runtime) / ("abyssal-wallpaper-" + token + ".sock")
+
+    def read(self, timeout):
+        if not self.selector.select(timeout):
+            return []
+        data = os.read(sys.stdin.fileno(), 65536)
+        if not data:
+            raise EOFError()
+        self.buffer += data
+        messages = []
+        while b"\n" in self.buffer:
+            line, self.buffer = self.buffer.split(b"\n", 1)
+            try:
+                messages.append(json.loads(line))
+            except ValueError:
+                pass
+        return messages
+
+    def wait(self, event, sequence, timeout=3):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            for message in self.read(min(0.1, max(0, deadline - time.monotonic()))):
+                if "config" in message:
+                    self.pending = message["config"]
+                elif message.get("event") == event and message.get("sequence") == sequence:
+                    return True
+        return False
+
+    def stop_video(self):
+        if self.video is None:
+            return
+        self.video.terminate()
+        try:
+            self.video.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            self.video.kill()
+            self.video.wait()
+        self.video = None
+        self.socket.unlink(missing_ok=True)
+
+    def snapshot(self):
+        if not self.current:
+            return ""
+        if self.current.get("kind") != "video":
+            return self.current["source"]
+        path = Path(self.temp.name) / ("frame-" + str(self.sequence) + ".png")
+        Path(self.temp.name).mkdir(parents=True, exist_ok=True)
+        # Retain only the latest captures; browsing must not accumulate PNGs.
+        for old in Path(self.temp.name).glob("frame-*.png"):
+            if int(old.stem.split("-")[1]) < self.sequence - 1:
+                old.unlink(missing_ok=True)
+        try:
+            ipc(self.socket, ["screenshot-to-file", str(path), "video"], timeout=2)
+            return str(path) if path.is_file() else ""
+        except (OSError, ValueError):
+            return ""
+
+    def apply(self, config):
+        if not Path(config.get("source", "")).is_file():
+            emit(error="Wallpaper file is unavailable: " + config.get("source", ""))
+            return
+        if self.current and render_key(self.current) == render_key(config):
+            self.current = config
+            return
+        self.sequence += 1
+        sequence = self.sequence
+        duration = max(0, min(3, float(config.get("duration", 0.6))))
+        both_awww = self.current and all(c.get("kind") == "image" and c.get("imageBackend") == "awww" for c in (self.current, config))
+        # Do not cover a newly starting video: some compositors withhold its
+        # first frame callbacks while an opaque transition surface is above it.
+        # Image changes can safely animate a snapshot of the previous video.
+        snapshot = self.snapshot() if self.current and duration and not both_awww and config.get("kind") != "video" else ""
+        if snapshot:
+            style = PROFILES.get(config.get("preset"), {}).get("native",
+                {"wipe": 1, "wave": 2, "grow": 3, "center": 3, "outer": 4}.get(config.get("transition"), 0))
+            emit(prepare=snapshot, fit=self.current.get("fit", "crop"), sequence=sequence, style=style)
+            if not self.wait("overlayReady", sequence):
+                emit(fade=True, duration=0)
+        self.stop_video()
+        emit(native="", sequence=sequence)
+        if config.get("kind") == "video":
+            opts = ("hwdec=" + config.get("hwdec", "auto")
+                    + " loop-file=inf no-audio terminal=no cache=no demuxer-readahead-secs=0"
+                    + (" panscan=1.0" if config.get("fit", "crop") == "crop" else "")
+                    + " " + config.get("options", "") + " input-ipc-server=" + str(self.socket))
+            # awww uses Background. Videos sit above it, below applications.
+            self.video = subprocess.Popen(["mpvpaper", "-l", "bottom", "-p", "-o", opts, config["output"], config["source"]],
+                                          stdout=subprocess.DEVNULL, stderr=sys.stderr)
+            deadline = time.monotonic() + 5
+            ready = False
+            while time.monotonic() < deadline and self.video.poll() is None:
+                try:
+                    if ipc(self.socket, ["get_property", "video-params"]):
+                        ready = True
+                        break
+                except (OSError, ValueError):
+                    pass
+                time.sleep(0.05)
+            if not ready:
+                self.stop_video()
+                emit(error="The video wallpaper could not start; keeping the previous frame")
+                self.current = None
+                return
+            if snapshot:
+                emit(raiseOverlay=True, sequence=sequence)
+                self.wait("raised", sequence)
+        else:
+            native = config.get("imageBackend") != "awww"
+            if not native:
+                result = command(image_command(config), timeout=10)
+                native = result.returncode != 0
+                if native:
+                    emit(error="awww could not display the image; using the native image renderer")
+                    config = dict(config, imageBackend="native")
+            if native:
+                emit(native=config["source"], fit=config.get("fit", "crop"), sequence=sequence)
+                self.wait("nativeReady", sequence)
+        self.current = config
+        emit(fade=True, duration=duration, sequence=sequence)
+
+    def run(self):
+        try:
+            while True:
+                if self.pending is not None:
+                    config, self.pending = self.pending, None
+                    try:
+                        self.apply(config)
+                    except (OSError, ValueError, KeyError) as error:
+                        emit(error=str(error))
+                for message in self.read(1):
+                    if "config" in message:
+                        self.pending = message["config"]
+                if self.video is not None and self.video.poll() is not None:
+                    self.video = None
+                    emit(error="The video wallpaper player exited")
+        except EOFError:
+            pass
+        finally:
+            self.stop_video()
+            # stop_video() only unlinks the socket when a video was actually
+            # running; a player that failed to start, or whose mpvpaper had
+            # already exited, leaves the socket to be pruned next reload.
+            # Unlinking here keeps the graceful SIGTERM path clean.
+            try:
+                self.socket.unlink(missing_ok=True)
+            except OSError:
+                pass
+            try:
+                self.temp.cleanup()
+            except OSError:
+                pass
+            self.selector.close()
+
+
+def main():
+    if sys.argv[1] == "cleanup":
+        cleanup()
+    elif sys.argv[1] == "wait-daemon":
+        for _ in range(50):
+            if command(["awww", "query", "--namespace", NAMESPACE], timeout=1).returncode == 0:
+                return
+            time.sleep(0.1)
+        raise SystemExit(1)
+    elif sys.argv[1] == "run":
+        def stop(*_):
+            raise EOFError()
+        signal.signal(signal.SIGTERM, stop)
+        Player(json.loads(sys.argv[2])).run()
+
+
+if __name__ == "__main__":
+    main()

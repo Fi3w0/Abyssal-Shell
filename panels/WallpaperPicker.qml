@@ -183,7 +183,7 @@ PanelWindow {
     FileDialog {
         id: browse
         title: "Choose a wallpaper"
-        nameFilters: ["Images and videos (*.jpg *.jpeg *.png *.webp *.gif *.avif *.mp4 *.mkv *.webm *.mov)", "All files (*)"]
+        nameFilters: ["Images and videos (*.jpg *.jpeg *.png *.webp *.gif *.avif *.jxl *.mp4 *.mkv *.webm *.mov *.avi *.m4v)", "All files (*)"]
         onAccepted: {
             const path = decodeURIComponent(selectedFile.toString().replace(/^file:\/\//, ""))
             const video = /\.(mp4|mkv|webm|mov|avi|m4v|gif)$/i.test(path)
@@ -545,6 +545,14 @@ PanelWindow {
                         picker: root
                         label: "Browse…"
                         onClicked: { root.close(); browse.open() }
+                    }
+                    Chip {
+                        picker: root
+                        icon: "sliders"
+                        onClicked: {
+                            root.close()
+                            Shell.toggleDetail(root.output, "top", "wallpaper-settings", root.width / 2, 20)
+                        }
                     }
                     Chip {
                         picker: root

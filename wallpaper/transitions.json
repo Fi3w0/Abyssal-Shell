@@ -1,0 +1,7 @@
+{
+  "dissolve": {"name":"Dissolve","description":"A quiet crossfade","type":"fade","native":0,"duration":0.6},
+  "undertow": {"name":"Undertow","description":"A rolling wave across the screen","type":"wave","native":2,"angle":25,"wave":"40,18","duration":0.9},
+  "current": {"name":"Current","description":"A clean diagonal sweep","type":"wipe","native":1,"angle":35,"duration":0.7},
+  "bloom": {"name":"Bloom","description":"Reveal outward from the centre","type":"grow","native":3,"position":"0.5,0.5","duration":0.8},
+  "sink": {"name":"Sink","description":"Close the old wallpaper into the centre","type":"outer","native":4,"position":"0.5,0.5","duration":0.8}
+}

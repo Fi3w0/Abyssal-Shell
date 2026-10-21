@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import QtQml.Models
+import "../wallpaper" as WallpaperComponents
 
 // Animated wallpaper per monitor, started with the shell so it follows
 // TideWM's session instead of a separate launcher script.
@@ -17,7 +18,7 @@ import QtQml.Models
 //   }
 // }
 //
-// `video` and `image` are both accepted (mpvpaper plays either); `hwdec`
+// Videos use mpvpaper; images use awww when available, otherwise Qt. `hwdec`
 // defaults to `auto`; `fit` is "crop" (fill the screen, cut the overflow,
 // like the picker's preview; the default) or "fit" (whole picture, bars);
 // `options` appends raw mpv options. Outputs are
@@ -31,9 +32,17 @@ Singleton {
     readonly property string socketDir: Quickshell.env("XDG_RUNTIME_DIR") || "/tmp"
 
     property var config: ({})
+    property var transitionPresets: ({})
     // A fresh shell must not add to players left by a previous one: stop the
     // old ones first, then start one per output.
     property bool ready: false
+    property bool awwwAvailable: false
+    property bool daemonReady: false
+    readonly property bool useAwww: awwwAvailable && config.imageBackend !== "native"
+    readonly property string imageBackend: useAwww && daemonReady ? "awww" : "native"
+    readonly property string transition: config.transition || "fade"
+    readonly property real transitionDuration: typeof config.transitionDuration === "number"
+        ? Math.max(0, Math.min(3, config.transitionDuration)) : 0.6
 
     readonly property var entries: {
         const configured = root.config && root.config.screens ? root.config.screens : ({})
@@ -48,6 +57,11 @@ Singleton {
                 key: [screen.name, source, entry.hwdec || "auto", entry.options || "", entry.fit || "crop"].join("\n"),
                 output: screen.name,
                 source: source,
+                kind: entry.video ? "video" : "image",
+                imageBackend: root.imageBackend,
+                transition: root.transition,
+                preset: root.config.transitionPreset || "",
+                duration: root.transition === "none" ? 0 : root.transitionDuration,
                 hwdec: entry.hwdec || "auto",
                 fit: entry.fit === "fit" ? "fit" : "crop",
                 options: entry.options || ""
@@ -65,7 +79,7 @@ Singleton {
     }
 
     // Puts `path` on `output`, keeping that output's hwdec and options.
-    function apply(output, path, kind) {
+    function apply(output, path, kind, preset) {
         const next = JSON.parse(JSON.stringify(config || {}))
         next.version = next.version || 1
         next.screens = next.screens || {}
@@ -75,6 +89,11 @@ Singleton {
         if (old.fit) entry.fit = old.fit
         entry[kind === "image" ? "image" : "video"] = path
         next.screens[output] = entry
+        if (preset && transitionPresets[preset]) {
+            next.transitionPreset = preset
+            next.transition = transitionPresets[preset].type
+            next.transitionDuration = transitionPresets[preset].duration
+        }
         write(next)
     }
 
@@ -91,6 +110,23 @@ Singleton {
         config = next
         pendingText = JSON.stringify(next, null, 1) + "\n"
         if (!mkdir.running) mkdir.running = true
+    }
+    function setOption(key, value) {
+        const next = JSON.parse(JSON.stringify(config || {}))
+        next[key] = value
+        write(next)
+    }
+    function selectPreset(name) {
+        if (!transitionPresets[name]) return
+        const next = Object.assign({}, config, {transitionPreset: name,
+            transition: transitionPresets[name].type, transitionDuration: transitionPresets[name].duration})
+        write(next)
+    }
+    function setFit(output, fit) {
+        const next = JSON.parse(JSON.stringify(config || {}))
+        next.screens = next.screens || {}
+        next.screens[output] = Object.assign({}, next.screens[output] || next.screens["*"] || {}, {fit: fit})
+        write(next)
     }
     property string pendingText: ""
     Process {
@@ -144,16 +180,51 @@ Singleton {
         }
     }
 
-    Component.onCompleted: file.text()
+    FileView {
+        id: recipes
+        path: Quickshell.shellPath("wallpaper/transitions.json")
+        blockLoading: true; printErrors: false
+        onLoaded: {try {root.transitionPresets = JSON.parse(text())} catch(e) {}}
+    }
+    Component.onCompleted: { file.text(); recipes.text() }
+    IpcHandler {
+        target: "wallpaper"
+        function preset(name: string): void {root.selectPreset(name)}
+        function change(preset: string, path: string, output: string, kind: string): void {
+            const target = output || Shell.targetOutput()
+            if (Quickshell.screens.some(s => s.name === target)) root.apply(target, path, kind, preset)
+        }
+    }
 
     // One player per output. Recreating a delegate destroys its Process,
     // which Quickshell terminates, so config changes and hotplug restart
     // only the affected output.
     Process {
         id: cleanup
-        command: ["pkill", "-f", "input-ipc-server=.*/abyssal-wallpaper-"]
+        command: [Quickshell.shellPath("scripts/wallpaper-player"), "cleanup"]
         running: true
+        stdout: StdioCollector { onStreamFinished: {
+            try { root.awwwAvailable = JSON.parse(text).awww === true } catch (e) {}
+        }}
         onExited: root.ready = true
+    }
+    Process {
+        id: daemon
+        command: ["awww-daemon", "--namespace", "abyssal", "--format", "argb", "--no-cache"]
+        running: root.ready && root.useAwww
+        onRunningChanged: if (running) daemonWait.running = true
+        onExited: {
+            root.daemonReady = false
+            if (root.useAwww) root.awwwAvailable = false
+        }
+    }
+    Process {
+        id: daemonWait
+        command: [Quickshell.shellPath("scripts/wallpaper-player"), "wait-daemon"]
+        onExited: code => {
+            root.daemonReady = code === 0
+            if (code !== 0) root.awwwAvailable = false
+        }
     }
 
     // Keyed by output, so the other outputs' players keep running when one
@@ -161,47 +232,12 @@ Singleton {
     // (ScriptModel keeps the row), so the player restarts itself on a new key.
     ScriptModel {
         id: players
-        values: root.ready ? root.entries : []
+        values: root.ready && (!root.useAwww || root.daemonReady) ? root.entries : []
         objectProp: "id"
     }
     Instantiator {
         model: players
-        delegate: Component {
-        QtObject {
-            id: player
-            required property var modelData
-
-            readonly property string socket: root.socketDir + "/abyssal-wallpaper-" + modelData.output + ".sock"
-
-            property Process process: Process {
-                running: false
-                command: [
-                    "mpvpaper", "-p", "-o",
-                    "hwdec=" + player.modelData.hwdec
-                        + " loop-file=inf no-audio terminal=no cache=no demuxer-readahead-secs=0"
-                        + (player.modelData.fit === "crop" ? " panscan=1.0" : "")
-                        + (player.modelData.options ? " " + player.modelData.options : "")
-                        + " input-ipc-server=" + player.socket,
-                    player.modelData.output, player.modelData.source
-                ]
-            }
-
-            // modelData is assigned after creation; start once it is there,
-            // and again (stop, then start) whenever this output's entry changes.
-            property Timer starter: Timer {
-                interval: 0
-                running: true
-                onTriggered: player.process.running = true
-            }
-            readonly property string key: modelData.key
-            onKeyChanged: {
-                if (!process.running) return
-                process.running = false
-                starter.interval = 150
-                starter.restart()
-            }
-        }
-        }
+        delegate: WallpaperComponents.Output {}
     }
 
 }
