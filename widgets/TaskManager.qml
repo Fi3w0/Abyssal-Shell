@@ -20,7 +20,22 @@ Item {
     readonly property bool titles: opts.style === "titles" && !vertical
     readonly property bool thisMonitor: opts.scope === "monitor"
     readonly property var pinned: opts.pinned || []
-    readonly property int iconSize: Math.round(Math.max(16, Math.min(48, (ctx ? ctx.thickness : 42) * (titles ? 0.46 : 0.6))))
+    // iconSize is a percent of the panel thickness (titles use a smaller
+    // share so the text fits); spacing is the gap between buttons.
+    readonly property real iconScale: (opts.iconSize !== undefined ? opts.iconSize : 60) / 100
+    readonly property int iconSize: Math.round(Math.max(12, Math.min(64, (ctx ? ctx.thickness : 42) * iconScale * (titles ? 0.77 : 1))))
+    readonly property int itemSpacing: opts.spacing !== undefined ? opts.spacing : (titles ? 4 : 6)
+
+    // The app being launched from here; its button pulses until a window
+    // for it appears (slow starters like Steam otherwise look ignored).
+    property string launching: ""
+    Timer { id: launchTimeout; interval: 8000; onTriggered: root.launching = "" }
+    function launch(uid, entry) {
+        if (!entry) return
+        entry.execute()
+        launching = uid
+        launchTimeout.restart()
+    }
 
     readonly property var windows: ToplevelManager.toplevels.values.filter(t =>
         !thisMonitor || (t.screens || []).some(s => s && s.name === ctx.output))
@@ -33,13 +48,22 @@ Item {
         return e ? e.id : (appId || "")
     }
 
+    // Rebuilt on every toplevel change, window titles included. Each item
+    // carries a stable uid, and the Repeater only sees the uid list through
+    // a ScriptModel, so buttons (and their loaded icons) survive a rebuild
+    // instead of being recreated and flashing the placeholder icon.
+    // DesktopEntries reloads whenever an applications folder changes, and
+    // its old entry objects die with it; reading `applications` here makes
+    // the list re-resolve them after every reload.
     readonly property var entries: {
+        DesktopEntries.applications.values
         const out = []
         const byKey = {}
+        const extra = {}
         for (const id of pinned) {
             const e = DesktopEntries.byId(id)
             if (!e) continue
-            const item = { key: e.id, entry: e, windows: [], pinned: true }
+            const item = { uid: e.id, key: e.id, entry: e, windows: [], pinned: true }
             byKey[e.id] = item
             out.push(item)
         }
@@ -48,16 +72,28 @@ Item {
             if (titles) {
                 const p = byKey[key]
                 if (p && p.windows.length === 0) { p.windows.push(t); continue }
-                out.push({ key: key, entry: entryFor(t.appId), windows: [t], pinned: false })
+                extra[key] = (extra[key] || 0) + 1
+                out.push({ uid: key + "#" + extra[key], key: key, entry: entryFor(t.appId), windows: [t], pinned: false })
                 continue
             }
             if (!byKey[key]) {
-                byKey[key] = { key: key, entry: entryFor(t.appId), windows: [], pinned: false }
+                byKey[key] = { uid: key, key: key, entry: entryFor(t.appId), windows: [], pinned: false }
                 out.push(byKey[key])
             }
             byKey[key].windows.push(t)
         }
         return out
+    }
+    readonly property var entryByUid: {
+        const map = {}
+        for (const e of entries) map[e.uid] = e
+        return map
+    }
+    onEntriesChanged: if (launching && entryByUid[launching] && entryByUid[launching].windows.length) launching = ""
+
+    ScriptModel {
+        id: uidModel
+        values: root.entries.map(e => e.uid)
     }
 
     implicitWidth: grid.implicitWidth
@@ -67,18 +103,24 @@ Item {
         id: grid
         rows: root.vertical ? -1 : 1
         columns: root.vertical ? 1 : -1
-        spacing: root.titles ? 4 : 6
+        spacing: root.itemSpacing
 
         Repeater {
-            model: root.entries
+            model: uidModel
             delegate: Item {
                 id: button
-                required property var modelData
-                readonly property var entry: modelData.entry
-                readonly property var wins: modelData.windows
+                required property string modelData
+                readonly property var item: root.entryByUid[modelData] || ({ uid: modelData, key: modelData, entry: null, windows: [], pinned: false })
+                readonly property var entry: item.entry
+                readonly property var wins: item.windows
+                readonly property bool starting: root.launching === modelData && wins.length === 0
+                // Kept across database reloads, when the entry is briefly gone.
+                property string iconName: ""
+                readonly property string liveIcon: entry && entry.icon ? entry.icon : ""
+                onLiveIconChanged: if (liveIcon) iconName = liveIcon
+                Component.onCompleted: iconName = liveIcon
                 readonly property bool active: wins.some(w => w.activated)
-                readonly property string iconPath: entry && entry.icon ? Quickshell.iconPath(entry.icon, true) : ""
-                readonly property string title: wins.length ? (wins[0].title || wins[0].appId) : (entry ? entry.name : modelData.key)
+                readonly property string title: wins.length ? (wins[0].title || wins[0].appId) : (entry ? entry.name : item.key)
 
                 implicitWidth: root.titles ? 168 : root.iconSize + 12
                 implicitHeight: root.titles ? root.iconSize + 14 : root.iconSize + 14
@@ -100,17 +142,27 @@ Item {
                         implicitHeight: root.iconSize
                         Layout.alignment: root.titles ? Qt.AlignVCenter : Qt.AlignCenter
                         Layout.fillWidth: !root.titles
-                        IconImage {
+
+                        SequentialAnimation on opacity {
+                            running: button.starting
+                            loops: Animation.Infinite
+                            alwaysRunToEnd: true
+                            NumberAnimation { to: 0.4; duration: 520; easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 1; duration: 520; easing.type: Easing.InOutSine }
+                        }
+
+                        AppIcon {
                             id: img
                             anchors.centerIn: parent
                             implicitSize: root.iconSize
-                            source: button.iconPath
+                            iconName: button.iconName
                             asynchronous: true
-                            visible: status === Image.Ready
                         }
+                        // Placeholder only when there is no icon at all, not
+                        // while a real one is still loading.
                         Icon {
                             anchors.centerIn: parent
-                            visible: !img.visible
+                            visible: !img.iconName || img.status === Image.Error
                             name: "app"
                             size: root.iconSize * 0.8
                             color: Theme.subtext
@@ -149,13 +201,13 @@ Item {
                     acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
                     onClicked: mouse => {
                         if (mouse.button === Qt.RightButton) {
-                            root.menuFor = button.modelData
+                            root.menuFor = button.item
                             menu.anchor.item = button
                             menu.visible = true
                             return
                         }
                         if (mouse.button === Qt.MiddleButton || button.wins.length === 0) {
-                            if (button.entry) button.entry.execute()
+                            root.launch(button.modelData, button.entry)
                             return
                         }
                         // Cycle through the app's windows.
@@ -219,7 +271,7 @@ Item {
                 MenuRow {
                     visible: root.menuFor !== null && root.menuFor.entry !== null
                     label: "New window"
-                    onActivated: { root.menuFor.entry.execute(); menu.visible = false }
+                    onActivated: { root.launch(root.menuFor.uid, root.menuFor.entry); menu.visible = false }
                 }
                 MenuRow {
                     visible: root.menuFor !== null && root.menuFor.windows.length > 0
