@@ -1,5 +1,35 @@
 # Abyssal Shell: to do
 
+## Current fixes — ordered queue
+
+New issues join this queue; finish the whole queue before stopping.
+
+1. [x] Restore the crashed shell through `abyssal-session`; inspect the core.
+   Qt crashed in context-menu event delivery (`QQuickItem::mapToScene`).
+   Clipboard drag changes were rolled back, tested separately, then restored.
+   The underlying Qt fault is diagnosed, not patched in Qt itself.
+2. [x] Constrain widget hitboxes to their slots and size them from content;
+   preserve the whole update count as its number of digits changes.
+3. [x] Centre the Wi-Fi icon when its text is hidden.
+4. [x] Render screenshot notification previews sharply.
+5. [x] Centre the calendar's empty notification state.
+6. [x] Make the clipboard popup draggable by its header; test separately
+   before putting it back into the live shell.
+7. [x] After reboot: remove the obsolete kernels after verifying Nyx and NVIDIA.
+8. [x] Fix Quick Settings opening away from its panel/button (reported after reboot).
+9. [x] Update settings: interval, manual package manager, Arch AUR helper,
+   Fedora repository selection, and Flatpak toggle.
+10. [x] Static/animated wallpapers with awww transitions integrated into the picker.
+    Native image fallback, duration slider/input and fill/fit per output.
+    Tested in nested TideWM; preview windows stay floating on HDMI locally.
+
+11. [x] Named wallpaper transition scripts: dissolve, undertow, current, bloom, sink.
+    Incoming videos switch directly: covering first frames can stall TideWM
+    callbacks. Image transitions and outgoing video snapshots are supported.
+12. [x] First standalone Qt settings app: themes, wallpapers, shortcuts, TideWM
+    files, updates, notifications, idle, Account and startup apps. See settings/README.md
+    for the working scope and the remaining dedicated compositor/widget forms.
+
 Decided with Fiw on 2026-10-21. Discuss the design of each item before
 building it. The installer and the settings app are tracked separately.
 
