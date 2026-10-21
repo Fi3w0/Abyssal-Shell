@@ -1,0 +1,65 @@
+#!/usr/bin/env -S python3 -I
+# Called by `wl-paste --watch` on every clipboard change (the data arrives
+# on stdin; it is read again here by type). Saves the new content into the
+# directory given as argv[1] and prints one JSON line for Abyssal:
+#   {"kind": "text"|"image", "file": ..., "preview": ..., "hash": ..., "ts": ...}
+# Prints nothing for empty clipboards and for content a password manager
+# marked as secret.
+import hashlib
+import json
+import os
+import subprocess
+import sys
+import time
+
+SECRET_HINTS = ("x-kde-passwordManagerHint",)
+
+
+def paste(mime):
+    return subprocess.run(["wl-paste", "--no-newline", "--type", mime],
+                          capture_output=True, timeout=5).stdout
+
+
+def main():
+    sys.stdin.buffer.read()  # drain what wl-paste --watch hands us
+    if os.environ.get("CLIPBOARD_STATE") in ("nil", "clear", "sensitive"):
+        return
+    out_dir = sys.argv[1]
+    types = subprocess.run(["wl-paste", "--list-types"], capture_output=True,
+                           text=True, timeout=5).stdout.split()
+    if not types or any(h in t for t in types for h in SECRET_HINTS):
+        return
+
+    ts = int(time.time() * 1000)
+    image = next((t for t in ("image/png", "image/jpeg", "image/webp") if t in types), None)
+    text_type = next((t for t in ("text/plain;charset=utf-8", "UTF8_STRING", "text/plain", "STRING") if t in types), None)
+
+    # Prefer text when both exist (browsers attach an image to copied text
+    # rarely, but file managers offer text paths alongside icons).
+    if text_type:
+        data = paste(text_type)
+        if not data.strip():
+            return
+        kind, ext = "text", "txt"
+        preview = " ".join(data.decode("utf-8", "replace").split())[:300]
+    elif image:
+        data = paste(image)
+        if not data:
+            return
+        kind, ext, preview = "image", image.split("/")[1].replace("jpeg", "jpg"), ""
+    else:
+        return
+
+    digest = hashlib.sha1(data).hexdigest()
+    os.makedirs(out_dir, exist_ok=True)
+    path = os.path.join(out_dir, f"{ts}-{digest[:8]}.{ext}")
+    with open(path, "wb") as f:
+        f.write(data)
+    print(json.dumps({"kind": kind, "file": path, "preview": preview, "hash": digest, "ts": ts}), flush=True)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception:
+        pass
