@@ -41,6 +41,7 @@ ShellRoot {
             IdleBlank { screen: monitor.modelData }
             AppLauncher { screen: monitor.modelData; output: monitor.modelData.name }
             WallpaperPicker { screen: monitor.modelData; output: monitor.modelData.name }
+            WindowSwitcher { screen: monitor.modelData; output: monitor.modelData.name }
             Welcome { screen: monitor.modelData }
 
             // Edit mode

@@ -50,7 +50,10 @@ building it. The installer and the settings app are tracked separately.
       and `>command` to run in a terminal.
 - [ ] **Matching app themes in TideWM.** GTK and Qt apps follow the Abyssal
       palette, set only through TideWM's `env {}`, never Plasma's config.
-- [ ] **Window switcher (Alt+Tab).** Add it as an option, off for Fiw.
+- [x] **Window switcher (Alt+Tab).** Off unless bound:
+      `bind Alt+Tab { "spawn:qs -c abyssal ipc call shell switcher" }`.
+      Recent windows first, previous one picked, Tab moves, releasing Alt
+      / Enter / click switches, Esc cancels. Not bound for Fiw.
 - [ ] **Real screen power-off on idle,** once TideWM's DPMS works on the
       RTX 3060 (idle blanking is a black overlay until then).
 

@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
 import QtQuick.Dialogs
 import Quickshell.Io
 
@@ -18,6 +19,24 @@ Singleton {
     // Wallpaper picker: output it is open on (and changes), "" when closed.
     // Moving the pointer to another monitor moves it there.
     property string wallpaperOn: ""
+    // Window switcher (panels/WindowSwitcher.qml): output it is open on.
+    property string switcherOn: ""
+    signal switcherStep(int dir)
+    // Toplevels, most recently focused first (the switcher's order).
+    property var recent: []
+    Connections {
+        target: ToplevelManager
+        function onActiveToplevelChanged() {
+            const t = ToplevelManager.activeToplevel
+            if (!t) return
+            root.recent = [t].concat(root.recent.filter(x => x !== t && ToplevelManager.toplevels.values.includes(x))).slice(0, 64)
+        }
+    }
+    function windowsByRecent() {
+        const all = ToplevelManager.toplevels.values
+        const known = recent.filter(t => all.includes(t))
+        return known.concat(all.filter(t => !known.includes(t)))
+    }
     // Keeps the system awake (idle inhibitor) while true.
     property bool caffeine: false
     // Wi-Fi / Bluetooth / Sound popup opened from a bar widget, or null:
@@ -255,6 +274,12 @@ Singleton {
         function lock(): void { root.lock() }
         function launcher(): void { root.toggleLauncher(root.targetOutput()) }
         function wallpapers(): void { root.toggleWallpaperPicker(root.targetOutput()) }
+        // Alt+Tab: opens the switcher, or moves to the next window in it.
+        function switcher(): void {
+            if (root.switcherOn !== "") root.switcherStep(1)
+            else root.switcherOn = root.targetOutput()
+        }
+        function switcherCancel(): void { root.switcherOn = "" }
         function widgets(): void { if (root.editing) root.sidebarOpen = true }
         // classic | rice | topbar, on the monitor you are working on
         function preset(name: string): void { PanelLayout.applyPreset(root.targetOutput(), name) }
