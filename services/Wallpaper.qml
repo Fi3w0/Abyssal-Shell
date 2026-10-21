@@ -18,7 +18,9 @@ import QtQml.Models
 // }
 //
 // `video` and `image` are both accepted (mpvpaper plays either); `hwdec`
-// defaults to `auto`, and `options` appends raw mpv options. Outputs are
+// defaults to `auto`; `fit` is "crop" (fill the screen, cut the overflow,
+// like the picker's preview; the default) or "fit" (whole picture, bars);
+// `options` appends raw mpv options. Outputs are
 // matched by name at runtime, so hotplug and other monitors work without
 // editing code.
 Singleton {
@@ -42,13 +44,83 @@ Singleton {
             const source = entry.video || entry.image || ""
             if (!source) continue
             out.push({
+                key: [screen.name, source, entry.hwdec || "auto", entry.options || "", entry.fit || "crop"].join("\n"),
                 output: screen.name,
                 source: source,
                 hwdec: entry.hwdec || "auto",
+                fit: entry.fit === "fit" ? "fit" : "crop",
                 options: entry.options || ""
             })
         }
         return out
+    }
+
+    // ── For the wallpaper picker ────────────────────────────────────────
+    // What is on `output` now ("" for nothing).
+    function currentFor(output) {
+        const screens = config && config.screens ? config.screens : {}
+        const e = screens[output] || screens["*"]
+        return e ? (e.video || e.image || "") : ""
+    }
+
+    // Puts `path` on `output`, keeping that output's hwdec and options.
+    function apply(output, path, kind) {
+        const next = JSON.parse(JSON.stringify(config || {}))
+        next.version = next.version || 1
+        next.screens = next.screens || {}
+        const old = next.screens[output] || {}
+        const entry = { hwdec: old.hwdec || "auto" }
+        if (old.options) entry.options = old.options
+        if (old.fit) entry.fit = old.fit
+        entry[kind === "image" ? "image" : "video"] = path
+        next.screens[output] = entry
+        write(next)
+    }
+
+    // Extra folders the picker lists besides <Pictures>/wallpapers.
+    readonly property var folders: config && Array.isArray(config.folders) ? config.folders : []
+    function addFolder(dir) {
+        if (folders.includes(dir)) return
+        const next = JSON.parse(JSON.stringify(config || {}))
+        next.folders = folders.concat([dir])
+        write(next)
+    }
+
+    function write(next) {
+        config = next
+        pendingText = JSON.stringify(next, null, 1) + "\n"
+        if (!mkdir.running) mkdir.running = true
+    }
+    property string pendingText: ""
+    Process {
+        id: mkdir
+        command: ["mkdir", "-p", root.dir]
+        onExited: code => { if (code === 0) file.setText(root.pendingText) }
+    }
+
+    // Wallpapers with thumbnails and palettes, from scripts/wall-index.
+    property var index: []
+    property bool scanning: indexer.running
+    function scan() {
+        if (indexer.running) return
+        indexer.command = [Quickshell.shellPath("scripts/wall-index")].concat(
+            folders.length ? root.defaultFolders.concat(folders) : [])
+        indexer.running = true
+    }
+    // Passed along with extra folders, so those add to the defaults.
+    readonly property var defaultFolders: [picturesDir + "/wallpapers", picturesDir + "/Wallpapers"]
+    property string picturesDir: Quickshell.env("HOME") + "/Pictures"
+    Process {
+        running: true
+        command: ["sh", "-c", "xdg-user-dir PICTURES 2>/dev/null"]
+        stdout: StdioCollector { onStreamFinished: { const d = text.trim(); if (d && d !== Quickshell.env("HOME")) root.picturesDir = d } }
+    }
+    Process {
+        id: indexer
+        stdout: StdioCollector {
+            onStreamFinished: { try { root.index = JSON.parse(text) } catch (e) { console.warn("abyssal: wall-index output:", e) } }
+        }
+        stderr: StdioCollector { onStreamFinished: if (text.trim()) console.warn(text.trim()) }
     }
 
     FileView {
@@ -83,8 +155,14 @@ Singleton {
         onExited: root.ready = true
     }
 
+    // Keyed, so a change to one output's entry restarts only that player.
+    ScriptModel {
+        id: players
+        values: root.ready ? root.entries : []
+        objectProp: "key"
+    }
     Instantiator {
-        model: root.ready ? root.entries : []
+        model: players
         delegate: Component {
         QtObject {
             id: player
@@ -98,6 +176,7 @@ Singleton {
                     "mpvpaper", "-p", "-o",
                     "hwdec=" + player.modelData.hwdec
                         + " loop-file=inf no-audio terminal=no cache=no demuxer-readahead-secs=0"
+                        + (player.modelData.fit === "crop" ? " panscan=1.0" : "")
                         + (player.modelData.options ? " " + player.modelData.options : "")
                         + " input-ipc-server=" + player.socket,
                     player.modelData.output, player.modelData.source

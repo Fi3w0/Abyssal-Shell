@@ -15,6 +15,8 @@ Singleton {
     property var quickSettings: null
     // App launcher: output it is open on, "" when closed.
     property string launcherOn: ""
+    // Wallpaper picker: output it is open on (and changes), "" when closed.
+    property string wallpaperOn: ""
     // Keeps the system awake (idle inhibitor) while true.
     property bool caffeine: false
     // Wi-Fi / Bluetooth / Sound popup opened from a bar widget, or null:
@@ -133,7 +135,15 @@ Singleton {
         quickSettings = quickSettings && quickSettings.output === output ? null : { output: output, edge: edge }
     }
 
+    function toggleWallpaperPicker(output) {
+        quickSettings = null
+        detail = null
+        launcherOn = ""
+        wallpaperOn = wallpaperOn === output ? "" : output
+    }
+
     function toggleLauncher(output) {
+        wallpaperOn = ""
         quickSettings = null
         detail = null
         launcherOn = launcherOn === output ? "" : output
@@ -232,6 +242,7 @@ Singleton {
         function done(): void { root.setEditing(false) }
         function lock(): void { root.lock() }
         function launcher(): void { root.toggleLauncher(root.targetOutput()) }
+        function wallpapers(): void { root.toggleWallpaperPicker(root.targetOutput()) }
         function widgets(): void { if (root.editing) root.sidebarOpen = true }
         // classic | rice | topbar, on the monitor you are working on
         function preset(name: string): void { PanelLayout.applyPreset(root.targetOutput(), name) }

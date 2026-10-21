@@ -70,7 +70,9 @@ var paths = {
     "resize":          '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>',
     "arrows":          '<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
     "clipboard":       '<path d="M9 3h6v4H9z"/><path d="M15 5h3v16H6V5h3"/>',
-    "pin":             '<path d="M12 17v5"/><path d="M9 3h6l-1 6 4 4H6l4-4z"/>'
+    "pin":             '<path d="M12 17v5"/><path d="M9 3h6l-1 6 4 4H6l4-4z"/>',
+    "image":           '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/>',
+    "palette":         '<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>'
 };
 
 function url(name, color, stroke) {

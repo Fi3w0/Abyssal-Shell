@@ -14,7 +14,7 @@ import "services"
 // separate instance (lock/shell.qml).
 ShellRoot {
     // Touch the services so they start with the shell, not on first use.
-    readonly property var _services: [Tide, SystemInfo, Notifications, Shell, Audio, Wallpaper, Idle, Clipboard]
+    readonly property var _services: [Tide, SystemInfo, Notifications, Shell, Audio, Wallpaper, Idle, Clipboard, Themes]
 
     Variants {
         model: Quickshell.screens
@@ -40,6 +40,7 @@ ShellRoot {
             DetailPopup { screen: monitor.modelData }
             IdleBlank { screen: monitor.modelData }
             AppLauncher { screen: monitor.modelData; output: monitor.modelData.name }
+            WallpaperPicker { screen: monitor.modelData; output: monitor.modelData.name }
             Welcome { screen: monitor.modelData }
 
             // Edit mode

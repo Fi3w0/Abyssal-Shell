@@ -41,6 +41,7 @@ Singleton {
         "bluetooth":      { file: "Bluetooth.qml",     name: "Bluetooth",       icon: "bluetooth", cat: "status", desc: "Devices and pairing" },
         "notifications":  { file: "NotificationBell.qml", name: "Notifications", icon: "bell", cat: "status", desc: "Notification centre, unread dot" },
         "clipboard":      { file: "Clipboard.qml",     name: "Clipboard",       icon: "clipboard", cat: "status", desc: "Clipboard history" },
+        "wallpaper":      { file: "WallpaperButton.qml", name: "Wallpaper",     icon: "image", cat: "shell", desc: "Wallpaper picker and theme from wallpaper" },
         "volume":         { file: "Volume.qml",        name: "Volume",          icon: "volume-high", cat: "status", desc: "Click mutes, scroll changes it" },
         "recording":      { file: "Recording.qml",     name: "Recording",       icon: "record", cat: "status", desc: "Lit while a recorder runs" },
         "tray":           { file: "Tray.qml",          name: "System tray",     icon: "tray", cat: "status", desc: "App icons and their menus" },
@@ -104,7 +105,7 @@ Singleton {
             extra = [numeric("step", "Scroll step", 1, 20, 5, "%")]
         } else if (id === "recording") {
             extra = [choice("always", "Display", [[false, "While recording"], [true, "Always"]], false)]
-        } else if (["power", "quick-settings", "bluetooth", "notifications", "clipboard"].includes(id)) {
+        } else if (["power", "quick-settings", "bluetooth", "notifications", "clipboard", "wallpaper"].includes(id)) {
             extra = [numeric("iconSize", "Icon size", 14, 26, 17, "px")]
         } else if (id === "task-manager") {
             extra = [numeric("iconSize", "Icon size", 30, 90, 60, "%"), numeric("spacing", "Spacing", 0, 24, 6, "px")]

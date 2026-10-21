@@ -12,8 +12,11 @@ building it. The installer and the settings app are tracked separately.
 - [x] **Feedback popups for keys.** The OSD shows the new keyboard layout
       ("RU  Russian") on every switch, and the mic state on any mute change
       (rose while muted). No mic keybind, on purpose.
-- [ ] **Wallpaper picker.** Choose a video or image per monitor from a grid
-      instead of editing `wallpaper.json` by hand.
+- [x] **Wallpaper picker.** Looping coverflow on the monitor it opens on
+      (Super+Shift+K, quick-menu tile, bar widget), momentum on hold,
+      live video preview, / search, W = theme from wallpaper (k-means
+      palette in `scripts/wall-index`). Themes are JSON files now; a
+      theme editor waits for the settings app.
 - [ ] **Removable drives.** A notification or popup when a drive is plugged
       in, with open and eject (UDisks over D-Bus, no new packages).
 - [ ] **Updates widget.** Portage updates, like Apdatifier in Plasma.
