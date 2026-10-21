@@ -15,7 +15,8 @@ Singleton {
     property var quickSettings: null
     // App launcher: output it is open on, "" when closed.
     property string launcherOn: ""
-    // Wallpaper picker: output it is open on (and changes), "" when closed.
+    // Wallpaper picker: "" when closed, else the output it is picking for
+    // (it is open on all of them; the pointer moves this between them).
     property string wallpaperOn: ""
     // Keeps the system awake (idle inhibitor) while true.
     property bool caffeine: false
@@ -139,7 +140,8 @@ Singleton {
         quickSettings = null
         detail = null
         launcherOn = ""
-        wallpaperOn = wallpaperOn === output ? "" : output
+        // Opens on every monitor; `output` starts as the one picked for.
+        wallpaperOn = wallpaperOn !== "" ? "" : output
     }
 
     function toggleLauncher(output) {
