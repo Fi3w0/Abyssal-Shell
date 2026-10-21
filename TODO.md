@@ -5,10 +5,10 @@ building it. The installer and the settings app are tracked separately.
 
 ## Next
 
-- [ ] **Crash recovery.** If `qs -c abyssal` dies, the bars, notifications
-      and launcher are gone until the next login. Restart it from the
-      TideWM spawn line (a small wrapper loop with a back-off), without
-      ever starting a second instance.
+- [x] **Crash recovery.** `scripts/abyssal-session` on TideWM's spawn line:
+      restarts after a crash (1, 2, 4, 8 s), gives up with a notification
+      after 5 crashes in 2 minutes, keeps `last-crash.log`, toasts after a
+      recovery; `ipc call shell restart` restarts on purpose.
 - [ ] **Feedback popups for keys.** A small OSD like the volume one for
       switching the keyboard layout (Super+Alt+Space shows nothing now) and
       for muting the microphone.

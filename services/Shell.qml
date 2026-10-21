@@ -181,10 +181,25 @@ Singleton {
         return Tide.focusedOutput !== "" ? Tide.focusedOutput : (Quickshell.screens[0]?.name ?? "")
     }
 
-    // "Open file" dialogs go through the desktop portal (TideWM's spawn
-    // line sets QT_QPA_PLATFORMTHEME=xdgdesktopportal for Abyssal only);
-    // this picks the portal's file chooser to match the file manager once.
+    // "Open file" dialogs go through the desktop portal (scripts/
+    // abyssal-session sets QT_QPA_PLATFORMTHEME=xdgdesktopportal for Abyssal
+    // only); this picks the portal's file chooser to match the file manager
+    // once.
     Component.onCompleted: Quickshell.execDetached([Quickshell.shellPath("scripts/portal-filechooser")])
+
+    // scripts/abyssal-session restarted the shell after a crash: say so once
+    // the toasts are up.
+    Timer {
+        running: (Quickshell.env("ABYSSAL_RECOVERED") ?? "") !== ""
+        interval: 1500
+        onTriggered: {
+            const code = parseInt(Quickshell.env("ABYSSAL_RECOVERED"))
+            const how = code > 128 ? "signal " + (code - 128) : "exit code " + code
+            const state = Quickshell.env("XDG_STATE_HOME") || "~/.local/state"
+            Notifications.push("Abyssal", "Shell restarted after a crash",
+                "It stopped with " + how + ". Log: " + state + "/abyssal/last-crash.log", "", null)
+        }
+    }
 
     // Picks an image for the quick menu header. The menu closes first: its
     // layer surfaces sit above normal windows and would cover the dialog.
@@ -207,9 +222,11 @@ Singleton {
         function close(): void { root.powerOn = "" }
     }
 
-    // qs -c abyssal ipc call shell edit | done | lock | launcher
+    // qs -c abyssal ipc call shell edit | done | lock | launcher | restart
     IpcHandler {
         target: "shell"
+        // A fresh process; scripts/abyssal-session starts it again at once.
+        function restart(): void { Qt.exit(75) }
         function edit(): void { root.setEditing(true) }
         function done(): void { root.setEditing(false) }
         function lock(): void { root.lock() }

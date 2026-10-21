@@ -1,0 +1,81 @@
+#!/bin/sh
+# Starts Abyssal from the compositor's autostart and brings it back if it
+# crashes. Put this, not qs, on TideWM's spawn line:
+#   spawn = ["~/.config/quickshell/abyssal/scripts/abyssal-session"]
+# Extra arguments go to qs instead of the default `-c abyssal`.
+#
+#   exit 0 (Qt.quit, qs kill)       stop, on purpose
+#   exit 75 (ipc call shell restart) start again at once
+#   SIGTERM / SIGINT / SIGHUP        stop, on purpose
+#   anything else                    crash: restart after 1, 2, 4... s;
+#                                    5 crashes within 2 minutes -> give up
+#                                    and send a notification
+# Stops when the compositor is gone (parent dead or Wayland socket gone).
+# Never runs twice: a lock per config, and qs -n refuses a duplicate shell.
+# Output of the current run: $XDG_STATE_HOME/abyssal/session.log; a
+# crashed run's is kept as last-crash.log.
+set -u
+
+[ $# -gt 0 ] || set -- -c abyssal
+
+runtime="${XDG_RUNTIME_DIR:-/tmp}"
+state="${XDG_STATE_HOME:-$HOME/.local/state}/abyssal"
+mkdir -p "$state"
+log="$state/session.log"
+crashlog="$state/last-crash.log"
+
+key=$(printf '%s' "$*" | cksum | cut -d' ' -f1)
+exec 9>"$runtime/abyssal-session-$key.lock"
+flock -n 9 || exit 0
+
+# Threaded render loop; file dialogs through the desktop portal, so they
+# look like the user's file manager (see scripts/portal-filechooser).
+export QSG_RENDER_LOOP="${QSG_RENDER_LOOP:-threaded}"
+export QT_QPA_PLATFORMTHEME="${QT_QPA_PLATFORMTHEME:-xdgdesktopportal}"
+
+compositor=$PPID
+alive() {
+    kill -0 "$compositor" 2>/dev/null || return 1
+    [ -z "${WAYLAND_DISPLAY:-}" ] && return 0
+    case "$WAYLAND_DISPLAY" in
+        /*) [ -S "$WAYLAND_DISPLAY" ] ;;
+        *) [ -S "$runtime/$WAYLAND_DISPLAY" ] ;;
+    esac
+}
+
+crashes=""      # start times (s) of the runs that crashed lately
+delay=1
+unset ABYSSAL_RECOVERED
+
+while :; do
+    started=$(date +%s)
+    qs -n "$@" >"$log" 2>&1 9>&-
+    code=$?
+    alive || exit 0
+
+    case $code in
+        0|129|130|143) exit 0 ;;
+        75) delay=1; unset ABYSSAL_RECOVERED; continue ;;
+    esac
+
+    cp "$log" "$crashlog"
+    now=$(date +%s)
+    # A minute of running fine forgets the back-off.
+    [ $((now - started)) -ge 60 ] && delay=1
+    recent=""
+    for t in $crashes $now; do
+        [ $((now - t)) -lt 120 ] && recent="$recent $t"
+    done
+    crashes=$recent
+    if [ $(echo $crashes | wc -w) -ge 5 ]; then
+        notify-send -u critical -a Abyssal "Abyssal keeps crashing" \
+            "Stopped restarting it. Log: $crashlog" 2>/dev/null
+        exit 1
+    fi
+
+    sleep "$delay"
+    alive || exit 0
+    [ $delay -lt 8 ] && delay=$((delay * 2))
+    # Tells the new shell to show a "restarted after a crash" toast.
+    export ABYSSAL_RECOVERED="$code"
+done
