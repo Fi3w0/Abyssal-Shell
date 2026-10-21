@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Networking
 import Quickshell.Services.UPower
 
 // Machine-wide stats, polled once for every bar on every monitor.
@@ -16,7 +17,13 @@ Singleton {
     property real   cpuTemp: 0
     property string netType: ""        // "wifi" | "ethernet" | ""
     property string netName: ""
-    property int    wifiSignal: 0
+    // Signal of the connected Wi-Fi network, from NetworkManager (the
+    // kernel's /proc/net/wireless is missing with newer drivers like mt7925).
+    readonly property var wifiNetwork: {
+        const dev = Networking.devices.values.find(d => d.type === DeviceType.Wifi)
+        return dev ? dev.networks.values.find(n => n.connected) ?? null : null
+    }
+    readonly property int wifiSignal: wifiNetwork ? Math.round(wifiNetwork.signalStrength * 100) : 0
     property bool   recording: false
     property bool   hasBacklight: false
 
@@ -71,12 +78,6 @@ Singleton {
         }
     }
 
-    Process {
-        id: wifiSigProc
-        command: ["awk", "NR==3{gsub(/\\./,\"\",$3); v=int($3*100/70); print (v>100?100:v)}", "/proc/net/wireless"]
-        stdout: SplitParser { onRead: data => root.wifiSignal = parseInt(data) || 0 }
-    }
-
     // First connected wifi/ethernet device and its connection name.
     Process {
         id: netProc
@@ -122,6 +123,15 @@ Singleton {
         uptimeProc.running = true
     }
 
+    // Something that acts on idle (blanks, locks or suspends after a
+    // while). Without one, Caffeine has nothing to hold off.
+    property bool idleDaemon: false
+    Process {
+        id: idleProc
+        command: ["sh", "-c", "pgrep -x 'swayidle|hypridle|xidlehook|wayidle|sway-audio-idle-inhibit|stasis' >/dev/null && echo 1 || echo 0"]
+        stdout: SplitParser { onRead: data => root.idleDaemon = data.trim() === "1" }
+    }
+
     Process {
         id: recProc
         command: ["sh", "-c", "pgrep -x 'obs|wf-recorder|gpu-screen-recorder|kooha|simplescreenrecorder' >/dev/null && echo 1 || echo 0"]
@@ -138,7 +148,6 @@ Singleton {
         cpuProc.running = true
         ramProc.running = true
         tempProc.running = true
-        if (netType === "wifi") wifiSigProc.running = true
     }
 
     function refresh() {
@@ -150,7 +159,7 @@ Singleton {
     Timer { interval: 3000; running: true; repeat: true; triggeredOnStart: true; onTriggered: root.refreshFast() }
     Timer {
         interval: 10000; running: true; repeat: true; triggeredOnStart: true
-        onTriggered: { netProc.running = true; recProc.running = true; radioProc.running = true }
+        onTriggered: { netProc.running = true; recProc.running = true; radioProc.running = true; idleProc.running = true }
     }
 
     // QML timers pause during suspend; a big wall-clock jump means we just
