@@ -71,13 +71,8 @@ Singleton {
         _seeded = true
     }
     function openPanel() {
-        const out = Shell.targetOutput()
-        const panel = PanelLayout.panelsFor(out)[0]
-        const screen = Quickshell.screens.find(s => s.name === out)
-        if (!panel || !screen) return
-        const vertical = panel.edge === "left" || panel.edge === "right"
         Shell.detail = null
-        Shell.toggleDetail(out, panel.edge, "drives", (vertical ? screen.height : screen.width) / 2, panel.size)
+        Shell.openPage("drives")
     }
 
     function size(bytes) {

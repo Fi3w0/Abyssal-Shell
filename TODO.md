@@ -45,8 +45,9 @@ building it. The installer and the settings app are tracked separately.
 - [x] **Notifications.** Pictures apps attach (toast and centre), up to three
       action buttons on toasts, clickable toasts, history saved for a week
       and restored after a restart or reload (without duplicates).
-- [ ] **Launcher modes.** A few, not many: candidates are running a shell
-      command and actions like lock or reboot from the search field.
+- [x] **Launcher modes.** Shell actions by name (lock, log out, sleep, reboot,
+      shut down, wallpaper, updates, clipboard, edit panels, "theme <name>")
+      and `>command` to run in a terminal.
 - [ ] **Matching app themes in TideWM.** GTK and Qt apps follow the Abyssal
       palette, set only through TideWM's `env {}`, never Plasma's config.
 - [ ] **Window switcher (Alt+Tab).** Add it as an option, off for Fiw.

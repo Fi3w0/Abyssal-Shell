@@ -136,6 +136,17 @@ Singleton {
         quickSettings = quickSettings && quickSettings.output === output ? null : { output: output, edge: edge }
     }
 
+    // A popup page (wifi, clipboard, updates…) centred on the first panel of
+    // the monitor you are working on: for keybinds and the launcher.
+    function openPage(page) {
+        const out = targetOutput()
+        const panel = PanelLayout.panelsFor(out)[0]
+        const screen = Quickshell.screens.find(s => s.name === out)
+        if (!panel || !screen) return
+        const vertical = panel.edge === "left" || panel.edge === "right"
+        toggleDetail(out, panel.edge, page, (vertical ? screen.height : screen.width) / 2, panel.size)
+    }
+
     function toggleWallpaperPicker(output) {
         quickSettings = null
         detail = null
@@ -255,13 +266,6 @@ Singleton {
         }
         // wifi | bluetooth | sound, centred on the first panel of the
         // monitor you are working on (for keybinds; widgets open their own)
-        function open(page: string): void {
-            const out = root.targetOutput()
-            const panel = PanelLayout.panelsFor(out)[0]
-            const screen = Quickshell.screens.find(s => s.name === out)
-            if (!panel || !screen) return
-            const vertical = panel.edge === "left" || panel.edge === "right"
-            root.toggleDetail(out, panel.edge, page, (vertical ? screen.height : screen.width) / 2, panel.size)
-        }
+        function open(page: string): void { root.openPage(page) }
     }
 }

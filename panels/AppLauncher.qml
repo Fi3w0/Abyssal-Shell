@@ -13,6 +13,10 @@ import "../services"
 //   typing        apps ranked by name, word starts, generic name, keywords;
 //                 apps you launch often rank higher
 //   2+2*3         a calculator row; Enter copies the result
+//   lock, reboot  shell actions by name: lock, log out, sleep, reboot, shut
+//                 down, wallpaper, updates, clipboard, edit panels, and
+//                 "theme <name>" to switch themes
+//   >command      runs it in your terminal
 // Up/Down move, Enter opens, Esc or a click outside closes.
 PanelWindow {
     id: root
@@ -72,8 +76,37 @@ PanelWindow {
         return s + Math.min(20, used(e) * 2)
     }
 
+    // ── Shell actions, found by name ────────────────────────────────────
+    readonly property var actions: [
+        { title: "Lock", icon: "lock", words: "lock screen", run: () => Shell.lock() },
+        { title: "Log out", icon: "logout", words: "logout log out exit quit session tidewm", run: () => Quickshell.execDetached(["tidectl", "quit"]) },
+        { title: "Sleep", icon: "sleep", words: "sleep suspend", run: () => Quickshell.execDetached(["systemctl", "suspend"]) },
+        { title: "Reboot", icon: "reboot", words: "reboot restart", run: () => Quickshell.execDetached(["systemctl", "reboot"]) },
+        { title: "Shut down", icon: "power", words: "shut down shutdown power off poweroff", run: () => Quickshell.execDetached(["systemctl", "poweroff"]) },
+        { title: "Wallpaper", icon: "image", words: "wallpaper background picker", detail: "Pick a wallpaper for this monitor", run: () => Shell.toggleWallpaperPicker(root.output) },
+        { title: "Check for updates", icon: "package", words: "updates upgrade packages check", run: () => Updates.check(false) },
+        { title: "Clipboard history", icon: "clipboard", words: "clipboard copy paste history", run: () => Shell.openPage("clipboard") },
+        { title: "Edit panels", icon: "sliders", words: "edit panels bar layout widgets", run: () => Shell.setEditing(true) }
+    ].concat(Themes.ids.map(id => ({
+        title: "Theme: " + Themes.name(id), icon: "palette", words: "theme " + id.replace(/-/g, " ") + " " + Themes.name(id).toLowerCase(),
+        detail: Themes.activeId === id ? "In use" : "Switch the shell's colours",
+        run: () => { Appearance.set("fromWallpaper", false); Appearance.set("theme", id) }
+    })))
+    function actionScore(a, q) {
+        const words = (a.title + " " + a.words).toLowerCase()
+        if (a.title.toLowerCase().startsWith(q)) return 3
+        if (words.split(/\s+/).some(w => w.startsWith(q))) return 2
+        return q.length >= 3 && words.includes(q) ? 1 : 0
+    }
+
     readonly property var results: {
-        const q = query.trim().toLowerCase()
+        const raw = query.trim()
+        // ">command": run it in a terminal.
+        if (raw.startsWith(">")) {
+            const cmd = raw.slice(1).trim()
+            return cmd ? [{ kind: "command", title: cmd, detail: "Run in a terminal", icon: "terminal", hint: "run ↵", cmd: cmd }] : []
+        }
+        const q = raw.toLowerCase()
         let list
         if (q === "") {
             list = apps.filter(e => used(e) > 0).sort((a, b) => used(b) - used(a))
@@ -86,15 +119,31 @@ PanelWindow {
                        .sort((a, b) => b.s - a.s || a.e.name.localeCompare(b.e.name))
                        .map(x => x.e)
         }
-        const rows = list.slice(0, 8).map(e => ({ kind: "app", entry: e }))
-        if (calc !== "") rows.unshift({ kind: "calc", value: calc })
-        return rows
+        const rows = list.slice(0, 8).map(e => ({ kind: "app", entry: e, title: e.name,
+            detail: e.genericName || e.comment || "", hint: "open ↵" }))
+        if (q.length >= 2) {
+            const acts = actions.map(a => ({ a: a, s: actionScore(a, q) })).filter(x => x.s > 0)
+                .sort((x, y) => y.s - x.s).slice(0, 4)
+                .map(x => ({ kind: "action", title: x.a.title, detail: x.a.detail || "", icon: x.a.icon, hint: "run ↵", run: x.a.run, strong: x.s === 3 }))
+            // A name that starts with what you typed comes before the apps.
+            rows.unshift(...acts.filter(r => r.strong))
+            rows.push(...acts.filter(r => !r.strong))
+        }
+        if (calc !== "") rows.unshift({ kind: "calc", value: calc, title: "= " + calc, detail: "Enter copies the result", icon: "plus", hint: "copy ↵" })
+        return rows.slice(0, 9)
     }
 
     function activate(row) {
         if (!row) return
         if (row.kind === "calc") {
             Quickshell.clipboardText = row.value
+        } else if (row.kind === "action") {
+            Shell.launcherOn = ""
+            row.run()
+            return
+        } else if (row.kind === "command") {
+            Quickshell.execDetached([Quickshell.shellPath("scripts/terminal"), "sh", "-c",
+                row.cmd + "; printf '\\n\\033[2m[done, Enter closes]\\033[0m'; read -r _"])
         } else {
             remember(row.entry)
             row.entry.execute()
@@ -165,7 +214,7 @@ PanelWindow {
                     Keys.onTabPressed: root.selected = (root.selected + 1) % Math.max(1, root.results.length)
                     Text {
                         visible: search.text === ""
-                        text: "Search apps, or type a sum"
+                        text: "Search apps and actions, a sum, or >command"
                         color: Theme.overlay
                         font: search.font
                     }
@@ -194,7 +243,7 @@ PanelWindow {
                     id: rowItem
                     required property var modelData
                     required property int index
-                    readonly property bool isCalc: modelData.kind === "calc"
+                    readonly property bool isApp: modelData.kind === "app"
                     readonly property bool current: index === root.selected
 
                     Layout.fillWidth: true
@@ -215,15 +264,15 @@ PanelWindow {
                                 id: appIcon
                                 anchors.fill: parent
                                 asynchronous: true
-                                iconName: !rowItem.isCalc ? rowItem.modelData.entry.icon : ""
-                                visible: !rowItem.isCalc && status === Image.Ready
+                                iconName: rowItem.isApp ? rowItem.modelData.entry.icon : ""
+                                visible: rowItem.isApp && status === Image.Ready
                             }
                             Icon {
                                 anchors.centerIn: parent
                                 visible: !appIcon.visible
-                                name: rowItem.isCalc ? "plus" : "app"
+                                name: rowItem.isApp ? "app" : rowItem.modelData.icon
                                 size: 22
-                                color: rowItem.isCalc ? Theme.cyan : Theme.subtext
+                                color: rowItem.isApp ? Theme.subtext : rowItem.modelData.kind === "calc" ? Theme.cyan : Theme.accent
                             }
                         }
 
@@ -231,17 +280,15 @@ PanelWindow {
                             spacing: 1
                             Layout.fillWidth: true
                             Text {
-                                text: rowItem.isCalc ? "= " + rowItem.modelData.value : rowItem.modelData.entry.name
+                                text: rowItem.modelData.title
                                 color: Theme.text
                                 elide: Text.ElideRight
-                                font { family: Theme.font; pixelSize: rowItem.isCalc ? 16 : 13; bold: true }
+                                font { family: rowItem.modelData.kind === "command" ? Theme.monoFont : Theme.font; pixelSize: rowItem.modelData.kind === "calc" ? 16 : 13; bold: true }
                                 Layout.fillWidth: true
                             }
                             Text {
-                                readonly property var e: rowItem.isCalc ? null : rowItem.modelData.entry
                                 visible: text !== ""
-                                text: rowItem.isCalc ? "Enter copies the result"
-                                    : (e.genericName || e.comment || "")
+                                text: rowItem.modelData.detail
                                 color: Theme.subtext
                                 elide: Text.ElideRight
                                 font { family: Theme.font; pixelSize: 10 }
@@ -251,7 +298,7 @@ PanelWindow {
 
                         Text {
                             visible: rowItem.current
-                            text: rowItem.isCalc ? "copy ↵" : "open ↵"
+                            text: rowItem.modelData.hint
                             color: Theme.accent
                             font { family: Theme.font; pixelSize: 10 }
                         }
