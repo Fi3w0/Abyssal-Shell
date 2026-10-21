@@ -543,7 +543,7 @@ Item {
         Label {
             x: 71
             y: 62
-            text: "fiw"
+            text: "user"
             font.pixelSize: 15
             font.weight: Font.DemiBold
         }

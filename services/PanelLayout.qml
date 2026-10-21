@@ -107,7 +107,7 @@ Singleton {
             panels: [{
                 edge: "bottom", width: "fill", align: "center", length: 60, look: "solid", floating: false,
                 size: 48, visibility: "always",
-                items: ["launcher", "separator", { id: "task-manager", style: "titles", pinned: ["kitty", "firefox", "firefox-bin", "org.kde.dolphin"] }, "spacer",
+                items: ["launcher", "separator", { id: "task-manager", style: "titles" }, "spacer",
                         "tray", "network", "bluetooth", "volume", "quick-settings", { id: "clock", date: true }]
             }]
         },
@@ -116,7 +116,7 @@ Singleton {
             panels: [topBar, {
                 edge: "bottom", width: "fit", align: "center", length: 60, look: "glass", floating: true,
                 size: 58, visibility: "always",
-                items: ["launcher", "separator", { id: "task-manager", style: "icons", pinned: ["kitty", "firefox", "firefox-bin", "org.kde.dolphin"] }]
+                items: ["launcher", "separator", { id: "task-manager", style: "icons" }]
             }]
         },
         "topbar": {
