@@ -49,6 +49,12 @@ Singleton {
         function onVolumesChanged() { root.osdFromNode() }
         function onMutedChanged() { root.osdFromNode() }
     }
+    Connections {
+        target: root.source && root.source.audio ? root.source.audio : null
+        function onMutedChanged() {
+            if (root._armed) Shell.showOsd("mic", 0, root.source.audio.muted)
+        }
+    }
     function osdFromNode() {
         if (!_armed || !sink || !sink.audio) return
         Shell.showOsd("volume", sink.audio.volume, sink.audio.muted)

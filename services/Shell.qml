@@ -147,7 +147,8 @@ Singleton {
                : { output: output, edge: edge, page: page, pos: pos, inset: inset }
     }
 
-    // Volume/brightness popup: shown on `osdOutput` until the timer runs out.
+    // Volume / mic mute / keyboard layout popup ("volume" | "mic" |
+    // "layout"): shown on `osdOutput` until the timer runs out.
     property string osdOutput: ""
     property string osdKind: "volume"
     property real   osdValue: 0

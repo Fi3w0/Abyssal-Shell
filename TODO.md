@@ -9,9 +9,9 @@ building it. The installer and the settings app are tracked separately.
       restarts after a crash (1, 2, 4, 8 s), gives up with a notification
       after 5 crashes in 2 minutes, keeps `last-crash.log`, toasts after a
       recovery; `ipc call shell restart` restarts on purpose.
-- [ ] **Feedback popups for keys.** A small OSD like the volume one for
-      switching the keyboard layout (Super+Alt+Space shows nothing now) and
-      for muting the microphone.
+- [x] **Feedback popups for keys.** The OSD shows the new keyboard layout
+      ("RU  Russian") on every switch, and the mic state on any mute change
+      (rose while muted). No mic keybind, on purpose.
 - [ ] **Wallpaper picker.** Choose a video or image per monitor from a grid
       instead of editing `wallpaper.json` by hand.
 - [ ] **Removable drives.** A notification or popup when a drive is plugged

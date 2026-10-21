@@ -108,7 +108,12 @@ Singleton {
                 try {
                     const ev = JSON.parse(line)
                     if (ev.event === "focus-changed" && ev.data) root.remember(ev.data.window_id)
-                    if (ev.event === "layout-changed" && ev.data) root.keyboardLayout = ev.data
+                    if (ev.event === "layout-changed" && ev.data) {
+                        const prev = root.keyboardLayout
+                        root.keyboardLayout = ev.data
+                        // A real switch, not the first answer after (re)connecting.
+                        if (prev && prev.current_idx !== ev.data.current_idx) Shell.showOsd("layout", 0, false)
+                    }
                 } catch (e) {}
                 refreshDebounce.restart()
             }
