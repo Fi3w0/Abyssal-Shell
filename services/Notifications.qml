@@ -22,7 +22,9 @@ Singleton {
 
     signal toast(var item)
 
-    function push(app, title, body, appIcon, notification) {
+    // `quiet`: into the history only, no toast and no unread dot (the ones
+    // the server hands back after a shell reload, like Plasma does).
+    function push(app, title, body, appIcon, notification, quiet) {
         const n = notification || null
         const item = {
             nid: Date.now() + Math.random(),
@@ -40,8 +42,9 @@ Singleton {
         next.unshift(item)
         while (next.length > 50) drop(next.pop().nid, true)
         history = next
-        unread++
         if (n) n.closed.connect(() => root.drop(item.nid, false))
+        if (quiet) return
+        unread++
         if (!dnd) toast(item)
     }
 
@@ -85,7 +88,7 @@ Singleton {
         actionsSupported: true
         onNotification: n => {
             n.tracked = true
-            root.push(n.appName, n.summary, n.body, n.appIcon, n)
+            root.push(n.appName, n.summary, n.body, n.appIcon, n, n.lastGeneration)
         }
     }
 

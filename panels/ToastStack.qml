@@ -43,7 +43,17 @@ PanelWindow {
             const here = root.output
             const target = Tide.focusedOutput !== "" ? Tide.focusedOutput : (Quickshell.screens[0]?.name ?? "")
             if (here !== target) return
-            toastModel.append({ tid: item.nid, app: item.app, title: item.title, body: item.body, icon: item.icon, closing: false })
+            // The same notification again while it is still up: count it on
+            // that toast and restart its time instead of stacking a copy.
+            for (let i = 0; i < toastModel.count; i++) {
+                const t = toastModel.get(i)
+                if (!t.closing && t.app === item.app && t.title === item.title && t.body === item.body) {
+                    toastModel.setProperty(i, "tid", item.nid)
+                    toastModel.setProperty(i, "repeats", t.repeats + 1)
+                    return
+                }
+            }
+            toastModel.append({ tid: item.nid, app: item.app, title: item.title, body: item.body, icon: item.icon, closing: false, repeats: 1 })
             while (toastModel.count > Notifications.maxToasts) toastModel.remove(0)
         }
     }
@@ -76,8 +86,12 @@ PanelWindow {
                 Behavior on x { NumberAnimation { duration: 220; easing.type: Easing.InCubic } }
                 Behavior on opacity { NumberAnimation { duration: toast.model.closing ? 180 : 260; easing.type: toast.model.closing ? Easing.InCubic : Easing.OutCubic } }
 
-                // Lifetime, paused while the pointer is on the toast.
+                // Lifetime, paused while the pointer is on the toast, restarted
+                // when the same notification comes in again.
+                readonly property int repeats: model.repeats
+                onRepeatsChanged: life.restart()
                 Timer {
+                    id: life
                     interval: Notifications.toastDuration
                     running: !toast.model.closing && !hover.containsMouse
                     onTriggered: root.close(toast.model.tid)
@@ -125,6 +139,20 @@ PanelWindow {
                         RowLayout {
                             Text { text: toast.model.app; color: Theme.subtext; font { family: Theme.font; pixelSize: 10; bold: true } }
                             Item { Layout.fillWidth: true }
+                            Rectangle {
+                                visible: toast.model.repeats > 1
+                                implicitWidth: repeatText.implicitWidth + 10
+                                implicitHeight: 15
+                                radius: 7.5
+                                color: Theme.accentSoft
+                                Text {
+                                    id: repeatText
+                                    anchors.centerIn: parent
+                                    text: "×" + toast.model.repeats
+                                    color: Theme.accent
+                                    font { family: Theme.font; pixelSize: 9; bold: true }
+                                }
+                            }
                             Text { text: "now"; color: Theme.overlay; font { family: Theme.font; pixelSize: 10 } }
                         }
                         Text {
