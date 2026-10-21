@@ -11,6 +11,7 @@ ColumnLayout {
 
     property bool showBack: false
     property bool active: false
+    property Item dragTarget: null
     signal back()
 
     spacing: 4
@@ -45,12 +46,37 @@ ColumnLayout {
         spacing: 8
         Layout.fillWidth: true
         Layout.bottomMargin: 2
-        Icon { name: "clipboard"; size: 16; stroke: 1.7; color: Theme.subtext }
-        Text {
-            text: "Clipboard"
-            color: Theme.text
-            font { family: Theme.font; pixelSize: 13; weight: Font.Medium }
+        Item {
             Layout.fillWidth: true
+            implicitHeight: 32
+            Row {
+                anchors { left: parent.left; verticalCenter: parent.verticalCenter }
+                spacing: 8
+                Icon { name: "clipboard"; size: 16; stroke: 1.7; color: Theme.subtext }
+                Text {
+                    text: "Clipboard"
+                    color: Theme.text
+                    font { family: Theme.font; pixelSize: 13; weight: Font.Medium }
+                }
+            }
+            Icon {
+                visible: root.dragTarget !== null
+                anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 4 }
+                name: "grip"
+                size: 14
+                color: Theme.overlay
+            }
+            MouseArea {
+                anchors.fill: parent
+                enabled: root.dragTarget !== null
+                cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+                preventStealing: true
+                drag.target: root.dragTarget
+                drag.minimumX: 8
+                drag.minimumY: 8
+                drag.maximumX: root.dragTarget ? Math.max(8, root.dragTarget.parent.width - root.dragTarget.width - 8) : 8
+                drag.maximumY: root.dragTarget ? Math.max(8, root.dragTarget.parent.height - root.dragTarget.height - 8) : 8
+            }
         }
         TextButton {
             visible: Clipboard.entries.some(e => !e.pinned)

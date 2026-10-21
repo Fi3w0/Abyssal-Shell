@@ -27,9 +27,24 @@ Scope {
     function sync() {
         const d = Shell.detail
         if (d && screen && d.output === screen.name) {
+            const fresh = !shown || !last || last.page !== d.page
             last = d
             shown = true
+            if (fresh) Qt.callLater(placeCard)
         }
+    }
+    function keepCardOnScreen() {
+        if (!win.clipboard) return
+        card.x = Math.max(8, Math.min(Math.max(8, win.width - card.width - 8), card.x))
+        card.y = Math.max(8, Math.min(Math.max(8, win.height - card.height - 8), card.y))
+    }
+    function placeCard() {
+        if (!win.clipboard) { card.x = 0; card.y = 0; return }
+        card.x = edge === "left" ? win.inset : edge === "right" ? win.width - card.width - win.inset
+            : (last ? last.pos : win.width / 2) - card.width / 2
+        card.y = edge === "top" ? win.inset : edge === "bottom" ? win.height - card.height - win.inset
+            : (last ? last.pos : win.height / 2) - card.height / 2
+        keepCardOnScreen()
     }
     readonly property string edge: last ? last.edge : "top"
     readonly property bool vertical: edge === "left" || edge === "right"
@@ -71,22 +86,32 @@ Scope {
             return Math.max(gap, Math.min(span - size - gap, Math.round(root.last.pos - size / 2)))
         }
 
-        anchors.top: root.edge !== "bottom"
-        anchors.bottom: root.edge === "bottom"
-        anchors.left: root.edge !== "right"
-        anchors.right: root.edge === "right"
-        margins.top: root.edge === "top" ? inset : root.vertical ? along : 0
-        margins.bottom: root.edge === "bottom" ? inset : 0
-        margins.left: root.edge === "left" ? inset : root.vertical ? 0 : along
-        margins.right: root.edge === "right" ? inset : 0
+        // Keep pointer coordinates stable while the clipboard card moves.
+        // Only the card accepts input; outside clicks reach the catcher.
+        readonly property bool clipboard: page === "clipboard"
+        anchors.top: clipboard || root.edge !== "bottom"
+        anchors.bottom: clipboard || root.edge === "bottom"
+        anchors.left: clipboard || root.edge !== "right"
+        anchors.right: clipboard || root.edge === "right"
+        margins.top: clipboard ? 0 : root.edge === "top" ? inset : root.vertical ? along : 0
+        margins.bottom: !clipboard && root.edge === "bottom" ? inset : 0
+        margins.left: clipboard ? 0 : root.edge === "left" ? inset : root.vertical ? 0 : along
+        margins.right: !clipboard && root.edge === "right" ? inset : 0
+        mask: clipboard ? cardRegion : null
+        Region { id: cardRegion; item: card }
+        onWidthChanged: Qt.callLater(root.keepCardOnScreen)
+        onHeightChanged: Qt.callLater(root.keepCardOnScreen)
 
         readonly property string page: root.last ? root.last.page : ""
-        implicitWidth: page === "clock" ? 680 : page === "notifications" || page === "clipboard" ? 380 : page === "updates" ? 420 : page === "usage" ? 360 : page === "calendar" ? 320 : 340
+        implicitWidth: page === "clock" ? 680 : page === "notifications" || page === "clipboard" ? 380 : ["updates", "update-settings", "wallpaper-settings"].includes(page) ? 420 : page === "usage" ? 360 : page === "calendar" ? 320 : 340
         implicitHeight: Math.min(card.implicitHeight, (root.screen ? root.screen.height : 900) - 2 * inset)
 
         Rectangle {
             id: card
-            anchors.fill: parent
+            anchors.fill: win.clipboard ? undefined : parent
+            width: win.clipboard ? Math.max(0, Math.min(380, win.width - 16)) : win.width
+            height: win.clipboard ? Math.max(0, Math.min(implicitHeight, win.height - 16)) : win.height
+            onHeightChanged: Qt.callLater(root.keepCardOnScreen)
             implicitHeight: loader.implicitHeight + 28
             radius: Theme.popupRadius
             color: Theme.glassStrong
@@ -111,9 +136,12 @@ Scope {
                 source: ({
                     wifi: "WifiPage.qml", bluetooth: "BluetoothPage.qml", sound: "SoundPage.qml",
                     calendar: "CalendarView.qml", notifications: "NotificationList.qml", clock: "ClockCenter.qml",
-                    clipboard: "ClipboardPanel.qml", updates: "UpdatesPanel.qml", drives: "DrivesPanel.qml", usage: "AiUsagePanel.qml"
+                    clipboard: "ClipboardPanel.qml", updates: "UpdatesPanel.qml", "update-settings": "UpdateSettingsPage.qml", "wallpaper-settings": "WallpaperSettings.qml", drives: "DrivesPanel.qml", usage: "AiUsagePanel.qml"
                 })[win.page] || ""
-                onLoaded: item.active = Qt.binding(() => root.open)
+                onLoaded: {
+                    if (win.clipboard) item.dragTarget = card
+                    item.active = Qt.binding(() => root.open)
+                }
             }
         }
     }

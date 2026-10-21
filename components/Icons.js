@@ -61,6 +61,7 @@ var paths = {
     "arrow-left":      '<path d="M19 12H5M12 5l-7 7 7 7"/>',
     "arrow-right":     '<path d="M5 12h14M12 5l7 7-7 7"/>',
     "dot":             '<path d="M12 11.5v1"/>',
+    "grip":            '<circle cx="9" cy="5" r=".7"/><circle cx="15" cy="5" r=".7"/><circle cx="9" cy="12" r=".7"/><circle cx="15" cy="12" r=".7"/><circle cx="9" cy="19" r=".7"/><circle cx="15" cy="19" r=".7"/>',
     "headphones":      '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><path d="M4 14h3v6H5.5A1.5 1.5 0 0 1 4 18.5zM20 14h-3v6h1.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
     "speaker":         '<path d="M6 3h12v18H6z"/><path d="M12 11a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/><path d="M12 6.5h.01"/>',
     "phone":           '<path d="M7 2h10v20H7z"/><path d="M11 18h2"/>',
