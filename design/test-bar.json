@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "monitors": {
+    "*": {
+      "panels": [
+        {
+          "edge": "top",
+          "width": "fill",
+          "align": "center",
+          "length": 100,
+          "look": "glass",
+          "floating": true,
+          "size": 44,
+          "visibility": "always",
+          "items": [
+            { "id": "logo", "icon": "builtin:logo", "iconSize": 75 },
+            "workspaces",
+            "separator",
+            { "id": "task-manager", "style": "icons", "scope": "monitor", "pinned": ["kitty", "firefox-bin", "com.obsproject.Studio"] },
+            "window-title",
+            "spacer",
+            { "id": "clock", "date": true },
+            "spacer",
+            "cpu",
+            "ram",
+            "temp",
+            "battery",
+            "separator",
+            "recording",
+            "network",
+            "bluetooth",
+            "volume",
+            "separator",
+            "tray",
+            "quick-settings",
+            "power"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -2,8 +2,8 @@ import QtQuick
 import "../services"
 import "Icons.js" as Icons
 
-// One recolourable line icon from Icons.js, rasterised at the screen's real
-// pixel density so it stays sharp at fractional scales.
+// Full-colour brand marks and recolourable line icons. The original wave
+// mark remains available as logo-line.
 Item {
     id: root
 
@@ -17,7 +17,10 @@ Item {
 
     Image {
         anchors.fill: parent
-        source: Icons.url(root.name, root.color.toString(), root.stroke)
+        source: root.name === "logo" ? Qt.resolvedUrl("../assets/abyssal.svg")
+              : root.name === "undertow" ? Qt.resolvedUrl("../assets/undertow.svg")
+              : root.name === "manta" ? Qt.resolvedUrl("../assets/manta.svg")
+                                    : Icons.url(root.name === "logo-line" ? "logo" : root.name, root.color.toString(), root.stroke)
         sourceSize.width: Math.ceil(root.size * 2)
         sourceSize.height: Math.ceil(root.size * 2)
         smooth: true

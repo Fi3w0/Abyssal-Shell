@@ -116,7 +116,7 @@ PopupWindow {
                     size: 14
                     color: mr.leadingColor
                 }
-                IconImage {
+                HiDpiIcon {
                     anchors.centerIn: parent
                     visible: mr.leading === "" && mr.iconSource !== ""
                     implicitSize: 16

@@ -33,10 +33,10 @@ Item {
         color: root.tint
     }
 
-    IconImage {
+    AppIcon {
         anchors.fill: parent
         visible: root.kind === "theme"
-        source: root.kind === "theme" ? Quickshell.iconPath(root.value, true) : ""
+        iconName: root.kind === "theme" ? root.value : ""
         asynchronous: true
     }
 
@@ -44,7 +44,7 @@ Item {
         id: picture
         anchors.fill: parent
         visible: root.kind === "file" && status === Image.Ready
-        source: root.kind === "file" ? "file://" + root.value : ""
+        source: root.kind === "file" ? "file://" + root.value.split("/").map(encodeURIComponent).join("/") : ""
         sourceSize.width: root.pixels
         sourceSize.height: root.pixels
         fillMode: Image.PreserveAspectFit

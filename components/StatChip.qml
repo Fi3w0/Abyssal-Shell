@@ -14,6 +14,7 @@ Item {
     property color  valueColor: Theme.text
     property bool   active: false
     property bool   vertical: false
+    property bool   showIcon: true
     signal clicked()
 
     implicitHeight: vertical ? col.implicitHeight + 12 : 28
@@ -32,7 +33,7 @@ Item {
         anchors.centerIn: parent
         spacing: 5
 
-        Icon { name: root.icon; size: 15; color: root.iconColor; Layout.alignment: Qt.AlignVCenter }
+        Icon { visible: root.showIcon; name: root.icon; size: 15; color: root.iconColor; Layout.alignment: Qt.AlignVCenter }
         Text {
             visible: root.label !== ""
             text: root.label
@@ -54,7 +55,7 @@ Item {
         anchors.centerIn: parent
         spacing: 2
 
-        Icon { name: root.icon; size: 15; color: root.iconColor; Layout.alignment: Qt.AlignHCenter }
+        Icon { visible: root.showIcon; name: root.icon; size: 15; color: root.iconColor; Layout.alignment: Qt.AlignHCenter }
         Text {
             visible: root.value !== ""
             text: root.value

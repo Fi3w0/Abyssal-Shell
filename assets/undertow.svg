@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <title>Abyssal — Undertow</title>
+  <desc>Three sweeping currents curl around an open centre: coral above, violet below, and a cyan inner crest.</desc>
+  <defs>
+    <linearGradient id="crest" x1="28" y1="17" x2="100" y2="76" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFB798"/><stop offset=".48" stop-color="#F078BD"/><stop offset="1" stop-color="#A974F2"/>
+    </linearGradient>
+    <linearGradient id="depth" x1="100" y1="45" x2="34" y2="110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C29AFF"/><stop offset=".5" stop-color="#9163E7"/><stop offset="1" stop-color="#6056C9"/>
+    </linearGradient>
+    <linearGradient id="current" x1="28" y1="93" x2="84" y2="47" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6B9CEB"/><stop offset=".55" stop-color="#77DED8"/><stop offset="1" stop-color="#C1F4E5"/>
+    </linearGradient>
+  </defs>
+  <!-- Broad silhouettes and open gaps stay legible at panel sizes. -->
+  <path fill="url(#crest)" d="M17 55C20 29 40 14 64 16c24 2 42 20 45 43-10-15-23-22-39-21-20 1-30 13-35 24-3 7-11 8-15 3-3-3-4-6-3-10Z"/>
+  <path fill="url(#depth)" d="M111 60c5 25-8 47-31 53-22 6-44-4-53-24 14 10 29 13 43 6 17-8 22-24 20-36-1-8 5-13 11-11 5 2 8 6 10 12Z"/>
+  <path fill="url(#current)" d="M22 77c-1 17 13 29 29 28-13-9-17-21-11-33 5-12 18-18 30-14 6 2 11 6 13 11 2-15-10-27-24-25-21 2-36 16-37 33Z"/>
+</svg>

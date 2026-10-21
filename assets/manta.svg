@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <title>Abyssal — Manta</title>
+  <desc>A violet manta ray with a sea-green leading edge, coral fin and a long tapering tail. Flat colours, no enclosing badge.</desc>
+  <!-- The wing outline carries the mark; the colour planes follow its anatomy. -->
+  <path fill="#9D83E5" d="M64 28c-7 0-12 12-19 15C32 48 17 33 7 19c3 26 16 45 38 53 9 3 13 12 15 22l4 22c1 6 4 8 7 8-4-5-5-10-5-16l-1-14c0-11 7-19 18-22 22-8 35-27 38-53-10 14-25 29-38 24-7-3-12-15-19-15Z"/>
+  <path fill="#74D5C2" d="M7 19c10 14 25 29 38 24 7-3 12-15 19-15-5 10-10 21-22 23C28 53 15 37 7 19Z"/>
+  <path fill="#F39492" d="M121 19c-10 14-25 29-38 24-4-2-8-7-11-11 4 11 8 18 15 20 14 3 26-15 34-33Z"/>
+  <path fill="#C5ADEE" d="m64 36-15 25 15 18 15-18-15-25Z"/>
+  <path fill="#9D83E5" d="M56 33c-4-7-5-14-1-17 0 7 4 9 9 12 5-3 9-5 9-12 4 3 3 10-1 17H56Z"/>
+</svg>

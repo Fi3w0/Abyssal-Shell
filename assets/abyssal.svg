@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <title>Abyssal — Trench currents</title>
+  <desc>Three tapering deep-water currents surround an open centre. Amethyst and pale violet recede into plum, with a muted cyan leading edge.</desc>
+  <defs>
+    <linearGradient id="outer" x1="69" y1="30" x2="151" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9166D1"/><stop offset=".48" stop-color="#7950BD"/><stop offset="1" stop-color="#4B2F78"/>
+    </linearGradient>
+    <linearGradient id="inner" x1="95" y1="78" x2="143" y2="183" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C5A5EF"/><stop offset="1" stop-color="#8053C4"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="173" y1="96" x2="173" y2="227" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#94DBD7"/><stop offset=".42" stop-color="#6FAEC9"/><stop offset="1" stop-color="#7950BD"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#outer)" d="M214 61C175 13 113 11 67 37 24 61 8 108 24 151c17 48 59 75 106 64 33-8 53-30 61-58-20 30-51 41-80 34-43-10-70-46-68-84 3 37 31 67 67 71-34-23-45-57-32-89 21-48 87-65 136-28Z"/>
+  <path fill="url(#inner)" d="M192 78c-47-30-93 2-105 38-11 36 14 63 41 65-28-16-34-39-23-62 18-30 55-39 87-41Z"/>
+  <path fill="url(#edge)" d="M128 95c45-15 85 10 91 50 6 39-29 76-85 82 37-14 56-44 52-75-4-28-26-49-58-57Z"/>
+</svg>
