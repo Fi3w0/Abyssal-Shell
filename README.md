@@ -1,6 +1,15 @@
 # Abyssal Shell
 
-A configurable Quickshell desktop shell for TideWM.
+A configurable Quickshell desktop shell for [TideWM](https://github.com/Fi3w0/TideWM).
+
+> **Work in progress.** Abyssal is under active development and changes
+> often; expect rough edges.
+>
+> This repository used to be **Moonlit Shell**, a Hyprland + Quickshell rice
+> (Catppuccin Mocha, frosted glass). That project is no longer maintained and
+> lives on unchanged in the
+> [`legacy/moonlit`](https://github.com/Fi3w0/Abyssal-shell/tree/legacy/moonlit)
+> branch, with its releases.
 
 Run with `qs -c abyssal` when this directory is linked to
 `~/.config/quickshell/abyssal`.
