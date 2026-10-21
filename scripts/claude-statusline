@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+"""Claude Code status line that also feeds Abyssal's usage widget.
+
+Claude Code runs this with its status JSON on stdin (settings.json:
+"statusLine": {"type": "command", "command": "<this file>"}). It saves the
+plan's usage windows (rate_limits: five_hour / seven_day, used_percentage,
+resets_at) to $XDG_STATE_HOME/abyssal/claude-usage.json and prints a short
+line: model · folder · 5h 42% · week 18%.
+"""
+import json
+import os
+import sys
+import time
+
+try:
+    data = json.load(sys.stdin)
+except ValueError:
+    data = {}
+
+model = (data.get("model") or {}).get("display_name") or ""
+folder = os.path.basename((data.get("workspace") or {}).get("current_dir") or data.get("cwd") or "")
+limits = data.get("rate_limits") or {}
+
+if limits:
+    state = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state"), "abyssal")
+    os.makedirs(state, exist_ok=True)
+    path = os.path.join(state, "claude-usage.json")
+    try:
+        with open(path + ".tmp", "w") as f:
+            json.dump({"updated": int(time.time()), "model": model, "rate_limits": limits}, f)
+        os.replace(path + ".tmp", path)
+    except OSError:
+        pass
+
+parts = [p for p in (model, folder) if p]
+for key, label in (("five_hour", "5h"), ("seven_day", "week")):
+    w = limits.get(key) or {}
+    if w.get("used_percentage") is not None:
+        parts.append(f"{label} {round(w['used_percentage'])}%")
+print(" · ".join(parts))

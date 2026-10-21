@@ -55,7 +55,8 @@ Scope {
         wallpaper: { label: "Wallpaper",       icon: "image",       sizes: [[2, 1], [1, 1]] },
         updates:   { label: "Updates",         icon: "package",     sizes: [[2, 1], [1, 1]] },
         drives:    { label: "Drives",          icon: "usb",         sizes: [[2, 1], [1, 1]] },
-        vpn:       { label: "VPN",             icon: "shield",      sizes: [[2, 1], [1, 1]] }
+        vpn:       { label: "VPN",             icon: "shield",      sizes: [[2, 1], [1, 1]] },
+        usage:     { label: "AI usage",        icon: "gauge",       sizes: [[2, 1], [1, 1]] }
     })
     // Ids this version doesn't know (an older or newer file) are skipped;
     // unavailable tiles too when hidden (never while editing).
@@ -178,6 +179,13 @@ Scope {
             return { icon: "image", title: "Wallpaper", on: Appearance.fromWallpaper, accent: Theme.accent,
                      detail: Appearance.fromWallpaper ? "Theme follows it" : Themes.name(Themes.activeId),
                      action: () => Shell.toggleWallpaperPicker(root.screen.name) }
+        case "usage": {
+            const c = AiUsage.used(AiUsage.claude, "5 hours"), x = AiUsage.used(AiUsage.codex, "5 hours")
+            return { icon: "gauge", title: "AI usage", on: AiUsage.peak >= 70, accent: AiUsage.peak >= 90 ? Theme.danger : Theme.warn,
+                     page: "usage", available: AiUsage.claude !== null || AiUsage.codex !== null,
+                     detail: [c >= 0 ? "Claude " + Math.round(c) + "%" : "", x >= 0 ? "Codex " + Math.round(x) + "%" : ""].filter(s => s).join(" · ") || "No data yet",
+                     action: () => root.page = "usage" }
+        }
         case "vpn": {
             const c = Vpn.preferred
             return { icon: Vpn.on ? "shield-check" : "shield", title: "VPN", on: Vpn.on, accent: Theme.success,
@@ -750,7 +758,8 @@ Scope {
                       : root.page === "sound" ? "SoundPage.qml"
                       : root.page === "idle" ? "IdlePage.qml"
                       : root.page === "updates" ? "UpdatesPanel.qml"
-                      : root.page === "drives" ? "DrivesPanel.qml" : ""
+                      : root.page === "drives" ? "DrivesPanel.qml"
+                      : root.page === "usage" ? "AiUsagePanel.qml" : ""
                 Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
                 onLoaded: {
                     item.showBack = true

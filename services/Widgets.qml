@@ -42,6 +42,7 @@ Singleton {
         "notifications":  { file: "NotificationBell.qml", name: "Notifications", icon: "bell", cat: "status", desc: "Notification centre, unread dot" },
         "clipboard":      { file: "Clipboard.qml",     name: "Clipboard",       icon: "clipboard", cat: "status", desc: "Clipboard history" },
         "updates":        { file: "Updates.qml",       name: "Updates",         icon: "package", cat: "system", desc: "Pending package updates (Portage, pacman, DNF, APT, XBPS, Flatpak)" },
+        "ai-usage":       { file: "AiUsage.qml",       name: "AI usage",        icon: "gauge", cat: "status", desc: "Claude Code and Codex 5-hour / weekly usage and service status" },
         "drives":         { file: "Drives.qml",        name: "Drives",          icon: "usb", cat: "status", desc: "Removable drives: open, eject (shows up when one is connected)" },
         "wallpaper":      { file: "WallpaperButton.qml", name: "Wallpaper",     icon: "image", cat: "shell", desc: "Wallpaper picker and theme from wallpaper" },
         "volume":         { file: "Volume.qml",        name: "Volume",          icon: "volume-high", cat: "status", desc: "Click mutes, scroll changes it" },

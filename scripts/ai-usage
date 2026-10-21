@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""Claude Code and Codex plan usage plus service status, as JSON.
+
+  claude  the usage windows Claude Code last gave its status line
+          ($XDG_STATE_HOME/abyssal/claude-usage.json, written by
+          scripts/claude-statusline)
+  codex   the newest rate_limits record in ~/.codex/sessions (Codex logs
+          its 5-hour and weekly windows with every response)
+  status  status.claude.com and status.openai.com (indicator: none, minor,
+          major, critical)
+A window whose reset time has passed counts as 0% used. Missing data is
+null, so the widget can say what to set up.
+"""
+import calendar
+import glob
+import json
+import os
+import time
+import urllib.request
+
+NOW = time.time()
+STATE = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state"), "abyssal")
+CODEX = os.path.join(os.environ.get("CODEX_HOME") or os.path.expanduser("~/.codex"), "sessions")
+
+
+def window(name, used, resets_at, minutes=None):
+    resets_at = int(resets_at) if resets_at else None
+    if resets_at and resets_at < NOW:  # reset since it was recorded
+        used, resets_at = 0, None
+    return {"name": name, "used": round(float(used or 0), 1), "resets_at": resets_at, "minutes": minutes}
+
+
+def claude():
+    try:
+        with open(os.path.join(STATE, "claude-usage.json")) as f:
+            d = json.load(f)
+    except (OSError, ValueError):
+        return None
+    rl = d.get("rate_limits") or {}
+    wins = []
+    for key, name, mins in (("five_hour", "5 hours", 300), ("seven_day", "Week", 10080)):
+        w = rl.get(key)
+        if w:
+            wins.append(window(name, w.get("used_percentage"), w.get("resets_at"), mins))
+    return {"windows": wins, "updated": d.get("updated"), "model": d.get("model", "")}
+
+
+def codex():
+    files = sorted(glob.glob(os.path.join(CODEX, "*", "*", "*", "*.jsonl")), key=os.path.getmtime, reverse=True)
+    for path in files[:8]:
+        try:
+            with open(path, "rb") as f:
+                lines = f.read().splitlines()
+        except OSError:
+            continue
+        for raw in reversed(lines):
+            if b'"rate_limits"' not in raw:
+                continue
+            try:
+                ev = json.loads(raw)
+            except ValueError:
+                continue
+            rl = (ev.get("payload") or {}).get("rate_limits") or {}
+            if not rl:
+                continue
+            wins = []
+            for key in ("primary", "secondary"):
+                w = rl.get(key)
+                if not w:
+                    continue
+                mins = w.get("window_minutes") or 0
+                name = "5 hours" if mins == 300 else "Week" if mins == 10080 else (f"{mins // 60} hours" if mins else key)
+                wins.append(window(name, w.get("used_percent"), w.get("resets_at"), mins))
+            ts = ev.get("timestamp")
+            try:
+                updated = calendar.timegm(time.strptime(ts[:19], "%Y-%m-%dT%H:%M:%S")) if ts else int(os.path.getmtime(path))
+            except (ValueError, TypeError):
+                updated = int(os.path.getmtime(path))
+            return {"windows": wins, "updated": updated}
+    return None
+
+
+def status(url):
+    try:
+        with urllib.request.urlopen(url, timeout=8) as r:
+            s = json.load(r).get("status") or {}
+        return {"indicator": s.get("indicator", "unknown"), "description": s.get("description", "")}
+    except Exception:
+        return {"indicator": "unknown", "description": "Status page unreachable"}
+
+
+print(json.dumps({
+    "claude": claude(),
+    "codex": codex(),
+    "status": {
+        "claude": status("https://status.claude.com/api/v2/status.json"),
+        "openai": status("https://status.openai.com/api/v2/status.json"),
+    },
+    "checked": int(NOW),
+}))

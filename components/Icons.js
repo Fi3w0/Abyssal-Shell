@@ -71,6 +71,7 @@ var paths = {
     "arrows":          '<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
     "clipboard":       '<path d="M9 3h6v4H9z"/><path d="M15 5h3v16H6V5h3"/>',
     "pin":             '<path d="M12 17v5"/><path d="M9 3h6l-1 6 4 4H6l4-4z"/>',
+    "gauge":           '<path d="M4.5 18a9 9 0 1 1 15 0"/><path d="M12 13l4-4"/><circle cx="12" cy="13" r="1.4"/>',
     "usb":             '<path d="M12 3v14"/><path d="M8 7l4-4 4 4"/><circle cx="12" cy="19" r="2"/><path d="M12 13l-5-2.5V8"/><rect x="5.5" y="6" width="3" height="2"/><path d="M12 11l5-2.5V7"/><circle cx="17" cy="6" r="1.2"/>',
     "drive":           '<rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 12h.01M11 12h6"/>',
     "eject":           '<path d="M5 15h14L12 6z"/><path d="M5 19h14"/>',

@@ -14,7 +14,7 @@ import "services"
 // separate instance (lock/shell.qml).
 ShellRoot {
     // Touch the services so they start with the shell, not on first use.
-    readonly property var _services: [Tide, SystemInfo, Notifications, Shell, Audio, Wallpaper, Idle, Clipboard, Themes, Updates, Drives, Vpn]
+    readonly property var _services: [Tide, SystemInfo, Notifications, Shell, Audio, Wallpaper, Idle, Clipboard, Themes, Updates, Drives, Vpn, AiUsage]
 
     Variants {
         model: Quickshell.screens

@@ -31,11 +31,11 @@ building it. The installer and the settings app are tracked separately.
       quick-menu tile toggles the last used one, VPN section with switches
       on the Wi-Fi page, shield badge on the network widget while one is up.
       Hidden while none are set up.
-- [ ] **Claude Code and Codex usage widget.** A bar widget with a panel
-      showing the 5-hour and weekly usage and service status for both.
-      Research the data sources first: local session logs
-      (`~/.claude/projects`, `~/.codex/sessions`, which records rate-limit
-      windows) and the public status pages.
+- [x] **Claude Code and Codex usage widget.** Claude: `scripts/claude-statusline`
+      as Claude Code's status line saves its rate_limits (no token use).
+      Codex: newest rate_limits in ~/.codex/sessions. Status pages of
+      Claude and OpenAI. Bar widget (two rings), quick-menu tile, panel
+      with 5-hour / weekly bars and reset times.
 
 ## Later
 
