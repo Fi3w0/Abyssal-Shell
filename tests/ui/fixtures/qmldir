@@ -1,0 +1,6 @@
+singleton Theme 1.0 Theme.qml
+singleton Clipboard 1.0 Clipboard.qml
+singleton Shell 1.0 Shell.qml
+singleton Updates 1.0 Updates.qml
+singleton SystemInfo 1.0 SystemInfo.qml
+singleton Vpn 1.0 Vpn.qml

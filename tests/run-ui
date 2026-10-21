@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+"""Run UI regressions against real components, with isolated fake services."""
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
+
+
+def find_runner():
+    explicit = os.environ.get("QML_TEST_RUNNER")
+    if explicit:
+        return explicit
+    for name in ("qmltestrunner6", "qmltestrunner"):
+        runner = shutil.which(name)
+        if runner:
+            return runner
+    for name in ("qtpaths6", "qtpaths-qt6", "qtpaths"):
+        qtpaths = shutil.which(name)
+        if not qtpaths:
+            continue
+        result = subprocess.run([qtpaths, "--query", "QT_INSTALL_BINS"],
+                                capture_output=True, text=True, check=False)
+        runner = Path(result.stdout.strip()) / "qmltestrunner"
+        if result.returncode == 0 and runner.is_file():
+            return str(runner)
+    raise SystemExit("Qt Quick Test runner not found; set QML_TEST_RUNNER to its path.")
+
+
+repo = Path(__file__).resolve().parent.parent
+runner = find_runner()
+with tempfile.TemporaryDirectory(prefix="abyssal-ui-test-") as directory:
+    root = Path(directory)
+    for folder in ("panels", "components", "widgets", "tests"):
+        (root / folder).mkdir()
+    sources = ["panels/ClipboardPanel.qml", "widgets/Updates.qml", "widgets/Network.qml"]
+    sources += ["components/" + name for name in
+                ("Icon.qml", "Icons.js", "TextButton.qml", "BarButton.qml", "StatChip.qml")]
+    for source in sources:
+        shutil.copy2(repo / source, root / source)
+    shutil.copytree(repo / "tests/ui/fixtures", root / "services")
+    shutil.copy2(repo / "tests/ui/tst_Fixes.qml", root / "tests/tst_Fixes.qml")
+    env = dict(os.environ, QT_QPA_PLATFORM="offscreen", QT_QUICK_BACKEND="software")
+    env.pop("WAYLAND_DISPLAY", None)
+    env.pop("DISPLAY", None)
+    result = subprocess.run([runner, "-input", str(root / "tests"), "-o", "-,txt"], env=env)
+    raise SystemExit(result.returncode)
