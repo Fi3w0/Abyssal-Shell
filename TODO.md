@@ -19,7 +19,11 @@ building it. The installer and the settings app are tracked separately.
       theme editor waits for the settings app.
 - [ ] **Removable drives.** A notification or popup when a drive is plugged
       in, with open and eject (UDisks over D-Bus, no new packages).
-- [ ] **Updates widget.** Portage updates, like Apdatifier in Plasma.
+- [x] **Updates widget.** `scripts/updates`: Portage (private shallow repo
+      copies + emerge -puDNv, from Apdatifier Gentoo, sharing its copy),
+      pacman + AUR, DNF, APT, XBPS, Flatpak. Bar widget, quick-menu tile,
+      panel with important / selected / dependency, Update all and Sync in
+      a terminal (`scripts/terminal`), toast once per batch, busy guard.
 - [ ] **VPN toggle.** NetworkManager VPN connections: a quick-menu tile
       and/or the Wi-Fi page.
 - [ ] **Claude Code and Codex usage widget.** A bar widget with a panel

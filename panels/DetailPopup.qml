@@ -81,7 +81,7 @@ Scope {
         margins.right: root.edge === "right" ? inset : 0
 
         readonly property string page: root.last ? root.last.page : ""
-        implicitWidth: page === "clock" ? 680 : page === "notifications" || page === "clipboard" ? 380 : page === "calendar" ? 320 : 340
+        implicitWidth: page === "clock" ? 680 : page === "notifications" || page === "clipboard" ? 380 : page === "updates" ? 420 : page === "calendar" ? 320 : 340
         implicitHeight: Math.min(card.implicitHeight, (root.screen ? root.screen.height : 900) - 2 * inset)
 
         Rectangle {
@@ -111,7 +111,7 @@ Scope {
                 source: ({
                     wifi: "WifiPage.qml", bluetooth: "BluetoothPage.qml", sound: "SoundPage.qml",
                     calendar: "CalendarView.qml", notifications: "NotificationList.qml", clock: "ClockCenter.qml",
-                    clipboard: "ClipboardPanel.qml"
+                    clipboard: "ClipboardPanel.qml", updates: "UpdatesPanel.qml"
                 })[win.page] || ""
                 onLoaded: item.active = Qt.binding(() => root.open)
             }

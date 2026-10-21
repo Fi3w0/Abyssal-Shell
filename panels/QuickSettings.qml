@@ -52,7 +52,8 @@ Scope {
         volume:    { label: "Volume",          icon: "volume-high", sizes: [[4, 1], [2, 1]] },
         micvolume: { label: "Mic volume",      icon: "mic",         sizes: [[4, 1], [2, 1]] },
         media:     { label: "Media player",    icon: "play",        sizes: [[4, 2], [2, 2]] },
-        wallpaper: { label: "Wallpaper",       icon: "image",       sizes: [[2, 1], [1, 1]] }
+        wallpaper: { label: "Wallpaper",       icon: "image",       sizes: [[2, 1], [1, 1]] },
+        updates:   { label: "Updates",         icon: "package",     sizes: [[2, 1], [1, 1]] }
     })
     // Ids this version doesn't know (an older or newer file) are skipped;
     // unavailable tiles too when hidden (never while editing).
@@ -175,6 +176,11 @@ Scope {
             return { icon: "image", title: "Wallpaper", on: Appearance.fromWallpaper, accent: Theme.accent,
                      detail: Appearance.fromWallpaper ? "Theme follows it" : Themes.name(Themes.activeId),
                      action: () => Shell.toggleWallpaperPicker(root.screen.name) }
+        case "updates":
+            return { icon: "package", title: "Updates", on: Updates.count > 0, accent: Updates.important ? Theme.rose : Theme.accent,
+                     page: "updates",
+                     detail: Updates.checking ? "Checking…" : Updates.count ? Updates.count + " pending" : "Up to date",
+                     action: () => root.page = "updates" }
         case "output":
             return { icon: /head(set|phone)/i.test(Audio.sinkName) ? "headphones" : "speaker", title: "Output",
                      on: false, accent: Theme.accent, page: "sound",
@@ -727,7 +733,8 @@ Scope {
                 source: root.page === "wifi" ? "WifiPage.qml"
                       : root.page === "bluetooth" ? "BluetoothPage.qml"
                       : root.page === "sound" ? "SoundPage.qml"
-                      : root.page === "idle" ? "IdlePage.qml" : ""
+                      : root.page === "idle" ? "IdlePage.qml"
+                      : root.page === "updates" ? "UpdatesPanel.qml" : ""
                 Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
                 onLoaded: {
                     item.showBack = true

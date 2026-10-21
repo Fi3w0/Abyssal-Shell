@@ -1,0 +1,36 @@
+#!/bin/sh
+# Runs a command in the user's terminal emulator and waits for it:
+#   terminal <command> [args...]
+# $TERMINAL first, then xdg-terminal-exec, then the first installed of the
+# common ones. Each gets its own "run this" syntax.
+[ $# -gt 0 ] || { echo "usage: terminal <command> [args...]" >&2; exit 2; }
+
+try() {
+    t=$1; shift
+    command -v "$t" >/dev/null 2>&1 || return 1
+    case "$t" in
+        kitty)          exec kitty --class abyssal-term "$@" ;;
+        foot)           exec foot --app-id abyssal-term "$@" ;;
+        alacritty)      exec alacritty --class abyssal-term -e "$@" ;;
+        wezterm)        exec wezterm start --always-new-process -- "$@" ;;
+        ghostty)        exec ghostty -e "$@" ;;
+        konsole)        exec konsole -e "$@" ;;
+        gnome-terminal) exec gnome-terminal --wait -- "$@" ;;
+        ptyxis)         exec ptyxis -x "$*" ;;
+        xfce4-terminal) exec xfce4-terminal --disable-server -x "$@" ;;
+        tilix)          exec tilix -e "$*" ;;
+        xterm)          exec xterm -e "$@" ;;
+        xdg-terminal-exec) exec xdg-terminal-exec "$@" ;;
+    esac
+    return 1
+}
+
+if [ -n "${TERMINAL:-}" ]; then
+    t=$(basename "${TERMINAL%% *}")
+    try "$t" "$@"
+fi
+for t in xdg-terminal-exec kitty foot alacritty wezterm ghostty konsole gnome-terminal ptyxis xfce4-terminal tilix xterm; do
+    try "$t" "$@"
+done
+echo "terminal: no terminal emulator found" >&2
+exit 127

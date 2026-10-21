@@ -1,0 +1,460 @@
+#!/usr/bin/env python3
+"""Pending package updates for the shell, from whatever this system uses.
+
+    updates check [--scheduled]   print JSON: sources, updates, news, busy
+    updates upgrade [SOURCE ...]  run the upgrades in this terminal
+    updates sync                  sync the package database (Portage, apt)
+
+Sources, each used only when its tool is installed, all checked without
+root and without touching the system's own databases:
+  portage  private shallow git copies of the configured repositories
+           (::gentoo from its git mirror) in $XDG_CACHE_HOME/abyssal/
+           updates/repos, then `emerge -puDNv @world` against them; ported
+           from Apdatifier Gentoo (an existing copy of its repos is moved
+           here once and symlinked back, so both share it)
+  pacman   checkupdates, else a private fakeroot database copy; AUR through
+           paru or yay
+  dnf      dnf check-update (dnf5 check-upgrade) with the user's own cache
+  apt      apt list --upgradable (the system's apt timer refreshes lists)
+  xbps     xbps-install -Mnu (repo data synced in memory only)
+  flatpak  flatpak remote-ls --updates
+
+--scheduled skips the check while the system is busy (GameMode, a Steam
+game, a package manager running, high load) and says why.
+
+~/.config/abyssal/updates.json (optional):
+  { "important": ["glob", ...], "ignore": ["glob", ...], "sudo": "sudo" }
+"""
+import fnmatch
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+
+HOME = os.path.expanduser("~")
+CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.join(HOME, ".cache"), "abyssal", "updates")
+CONFIG = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".config"), "abyssal", "updates.json")
+IMPORTANT = ["*kernel*", "*linux-firmware*", "*nvidia*", "*mesa*", "*glibc*", "*systemd*", "*openrc*",
+             "*qt-base*", "*qtbase*", "*qt6-base*", "*quickshell*", "*tidewm*", "*xorg-server*", "*wayland*",
+             "*pipewire*", "*grub*", "*limine*", "*gcc*", "*llvm-core/llvm*", "*portage*", "*pacman*", "*dnf*", "*apt*"]
+
+
+def have(tool):
+    return shutil.which(tool) is not None
+
+
+def run(cmd, timeout=600, env=None):
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
+        return p.returncode, p.stdout, p.stderr
+    except (OSError, subprocess.SubprocessError) as e:
+        return 127, "", str(e)
+
+
+def settings():
+    try:
+        with open(CONFIG) as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def matches(name, patterns):
+    return any(fnmatch.fnmatch(name, p) for p in patterns)
+
+
+def busy_reason():
+    if have("gamemoded"):
+        rc, out, _ = run(["gamemoded", "-s"], timeout=5)
+        if "is active" in out:
+            return "GameMode is active"
+    rc, out, _ = run(["pgrep", "-a", "-x", "reaper"], timeout=5)
+    if "SteamLaunch" in out:
+        return "a Steam game is running"
+    for pm in ("emerge", "pacman", "dnf", "apt", "apt-get", "dpkg", "xbps-install"):
+        if run(["pgrep", "-x", pm], timeout=5)[0] == 0:
+            return pm + " is running"
+    load = os.getloadavg()[0]
+    limit = max(1, (os.cpu_count() or 1) // 4)
+    if load >= limit:
+        return f"CPU load {load:.1f}"
+    return ""
+
+
+def item(source, name, old, new, repo="", reason="", desc="", size=""):
+    return {"source": source, "name": name, "old": old, "new": new, "repo": repo,
+            "reason": reason, "desc": desc, "size": size}
+
+
+# ── Portage ──────────────────────────────────────────────────────────────
+SAFE = re.compile(r"^[A-Za-z0-9_.+-]+$")
+
+
+def portage_repos():
+    """Syncs the private repo copies; returns PORTAGE_REPOSITORIES text."""
+    rc, conf, err = run(["portageq", "repositories_configuration", "/"], timeout=60)
+    if rc != 0:
+        raise RuntimeError("portageq: " + err.strip())
+    repos_dir = os.path.join(CACHE, "repos")
+    # Apdatifier Gentoo keeps the same kind of copy: take it over once.
+    old = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.join(HOME, ".cache"), "apdatifier-gentoo", "repos")
+    if not os.path.exists(repos_dir) and os.path.isdir(old) and not os.path.islink(old):
+        os.makedirs(CACHE, exist_ok=True)
+        shutil.move(old, repos_dir)
+        os.symlink(repos_dir, old)
+    os.makedirs(repos_dir, exist_ok=True)
+
+    main, repos, cur = "gentoo", [], None
+    for line in conf.splitlines():
+        m = re.match(r"^\[(.+)\]$", line)
+        if m:
+            cur = {"name": m.group(1)}
+            if cur["name"] != "DEFAULT":
+                repos.append(cur)
+            continue
+        m = re.match(r"^(\S+) = (.*)$", line)
+        if m and cur is not None:
+            if cur["name"] == "DEFAULT" and m.group(1) == "main-repo":
+                main = m.group(2)
+            cur[m.group(1)] = m.group(2)
+
+    out = ["[DEFAULT]", "main-repo = " + main]
+    for r in repos:
+        name = r["name"]
+        if not SAFE.match(name):
+            continue
+        url = "https://github.com/gentoo-mirror/gentoo.git" if name == "gentoo" else (
+            r.get("sync-uri", "") if r.get("sync-type") == "git" else "")
+        loc = r.get("location", "")
+        if url:
+            d = os.path.join(repos_dir, name)
+            if os.path.isdir(os.path.join(d, ".git")):
+                ok = run(["git", "-C", d, "fetch", "-q", "--depth", "1", "origin"], timeout=600)[0] == 0 \
+                    and run(["git", "-C", d, "reset", "-q", "--hard", "FETCH_HEAD"], timeout=300)[0] == 0
+                stamp = os.path.join(d, ".git", "abyssal-gc")
+                if ok and (not os.path.exists(stamp) or time.time() - os.path.getmtime(stamp) > 7 * 86400):
+                    run(["git", "-C", d, "reflog", "expire", "--expire=now", "--all"], timeout=300)
+                    run(["git", "-C", d, "gc", "-q", "--prune=now"], timeout=900)
+                    open(stamp, "w").close()
+                # Offline: the copy from last time still beats nothing.
+                loc = d
+            else:
+                shutil.rmtree(d, ignore_errors=True)
+                if run(["git", "clone", "-q", "--depth", "1", url, d], timeout=1800)[0] == 0:
+                    loc = d
+        out += ["[" + name + "]", "location = " + loc]
+    return "\n".join(out) + "\n", os.path.join(repos_dir, "gentoo")
+
+
+def portage_selected():
+    try:
+        import portage
+        from portage._sets import load_default_config
+        cfg = load_default_config(portage.settings, portage.db[portage.root])
+        return {a.cp for a in cfg.getSetAtoms("selected")}
+    except Exception:
+        return set()
+
+
+def check_portage():
+    repos, gentoo = portage_repos()
+    env = dict(os.environ, PORTAGE_REPOSITORIES=repos)
+    rc, out, err = run(["emerge", "-puDNv", "--color=n", "--nospinner", "--getbinpkg=n", "--usepkg=n", "@world"],
+                       timeout=900, env=env)
+    if rc != 0:
+        lines = [l for l in (out + err).splitlines() if l.strip() and "news item" not in l]
+        raise RuntimeError("\n".join(lines[-8:]))
+    locations = dict(re.findall(r"^\[(.+)\]\nlocation = (.*)$", repos, re.M))
+    selected = portage_selected()
+    rx = re.compile(r"^\[ebuild\s+([A-Z ~*#]*)\]\s+(\S+?)::(\S+)(?:\s+\[([^\]]+)\])?")
+    ver = re.compile(r"^(.+?)-(\d[^-]*(?:-r\d+)?)$")
+    found = []
+    for line in out.splitlines():
+        m = rx.match(line)
+        if not m:
+            continue
+        flags, cpv, repo, old = m.group(1).replace(" ", ""), m.group(2), m.group(3), (m.group(4) or "")
+        if "R" in flags and "U" not in flags and "N" not in flags:
+            continue  # plain rebuilds are not updates
+        old = old.split(",")[0].split("::")[0].split(":")[0]  # "3.8.9:0/13" -> "3.8.9"
+        cpv = cpv.split(":")[0]  # "…-7.2.12:7.2.12" -> drop the slot
+        v = ver.match(cpv)
+        if not v:
+            continue
+        cp, pvr = v.group(1), v.group(2)
+        desc = ""
+        md = os.path.join(locations.get(repo, ""), "metadata", "md5-cache", cpv)
+        try:
+            with open(md) as f:
+                for l in f:
+                    if l.startswith("DESCRIPTION="):
+                        desc = l.split("=", 1)[1].strip()
+                        break
+        except OSError:
+            pass
+        size = ""
+        if old:
+            try:
+                with open(f"/var/db/pkg/{cp}-{old}/SIZE") as f:
+                    size = f.read().strip()
+            except OSError:
+                pass
+        found.append(item("portage", cp, old or "new", pvr, repo,
+                          "explicit" if cp in selected else "dependency", desc, size))
+    synced = 0
+    for p in (os.path.join(gentoo, ".git", "FETCH_HEAD"), "/var/db/repos/gentoo/metadata/timestamp.chk"):
+        if os.path.exists(p):
+            synced = int(os.path.getmtime(p))
+            break
+    return found, synced
+
+
+def portage_news():
+    rc, out, _ = run(["eselect", "news", "count", "new"], timeout=30)
+    try:
+        return int(out.strip() or 0)
+    except ValueError:
+        return 0
+
+
+# ── pacman ───────────────────────────────────────────────────────────────
+def check_pacman():
+    pairs = re.compile(r"^(\S+) (\S+) -> (\S+)")
+    found = []
+    if have("checkupdates"):
+        rc, out, err = run(["checkupdates", "--nocolor"], timeout=600)
+        if rc not in (0, 2):  # 2: nothing to update
+            raise RuntimeError(err.strip() or "checkupdates failed")
+    elif have("fakeroot"):
+        db = os.path.join(CACHE, "pacman-db")
+        os.makedirs(db, exist_ok=True)
+        _, conf, _ = run(["pacman-conf", "DBPath"], timeout=30)
+        local = os.path.join((conf.strip() or "/var/lib/pacman/").rstrip("/"), "local")
+        link = os.path.join(db, "local")
+        if not os.path.islink(link):
+            os.symlink(local, link)
+        lock = os.path.join(db, "db.lck")
+        if os.path.exists(lock):
+            os.remove(lock)
+        run(["fakeroot", "--", "pacman", "-Sy", "--dbpath", db, "--logfile", "/dev/null"], timeout=600)
+        rc, out, err = run(["pacman", "-Qu", "--dbpath", db], timeout=120)
+    else:
+        rc, out, err = run(["pacman", "-Qu"], timeout=120)
+    for l in out.splitlines():
+        m = pairs.match(l)
+        if m and "[ignored]" not in l:
+            found.append(item("pacman", m.group(1), m.group(2), m.group(3), "repo"))
+    helper = next((h for h in ("paru", "yay") if have(h)), None)
+    if helper:
+        _, out, _ = run([helper, "-Qua"], timeout=600)
+        for l in out.splitlines():
+            m = pairs.match(l)
+            if m:
+                found.append(item("pacman", m.group(1), m.group(2), m.group(3), "aur"))
+    return found
+
+
+# ── dnf ──────────────────────────────────────────────────────────────────
+def check_dnf():
+    dnf5 = have("dnf5")
+    cmd = ["dnf5", "check-upgrade", "-q"] if dnf5 else ["dnf", "check-update", "-q"]
+    rc, out, err = run(cmd, timeout=900)
+    if rc not in (0, 100):  # 100: updates available
+        raise RuntimeError(err.strip()[-400:] or "dnf failed")
+    rows = []
+    for l in out.splitlines():
+        parts = l.split()
+        if len(parts) == 3 and "." in parts[0] and not l.startswith(" "):
+            name = parts[0].rsplit(".", 1)[0]
+            rows.append((name, parts[1], parts[2]))
+    installed = {}
+    if rows:
+        _, out, _ = run(["rpm", "-q", "--qf", "%{NAME} %{VERSION}-%{RELEASE}\n"] + [r[0] for r in rows], timeout=120)
+        for l in out.splitlines():
+            p = l.split()
+            if len(p) == 2:
+                installed[p[0]] = p[1]
+    return [item("dnf", n, installed.get(n, "?"), v, repo) for n, v, repo in rows]
+
+
+# ── apt ──────────────────────────────────────────────────────────────────
+def check_apt():
+    rc, out, err = run(["apt", "list", "--upgradable"], timeout=300)
+    rx = re.compile(r"^([^/\s]+)/(\S+)\s+(\S+)\s+\S+\s+\[upgradable from: ([^\]]+)\]")
+    found = []
+    for l in out.splitlines():
+        m = rx.match(l)
+        if m:
+            found.append(item("apt", m.group(1), m.group(4), m.group(3), m.group(2).split(",")[0]))
+    return found
+
+
+def apt_synced():
+    p = "/var/lib/apt/periodic/update-success-stamp"
+    for f in (p, "/var/cache/apt/pkgcache.bin"):
+        if os.path.exists(f):
+            return int(os.path.getmtime(f))
+    return 0
+
+
+# ── xbps ─────────────────────────────────────────────────────────────────
+def check_xbps():
+    rc, out, err = run(["xbps-install", "-Mnu"], timeout=600)
+    if rc not in (0, 6):  # 6: nothing to update
+        raise RuntimeError(err.strip()[-400:] or "xbps-install failed")
+    found = []
+    for l in out.splitlines():
+        p = l.split()
+        if len(p) >= 2 and p[1] == "update":
+            m = re.match(r"^(.+)-([^-]+_\d+)$", p[0])
+            if not m:
+                continue
+            name, new = m.group(1), m.group(2)
+            _, cur, _ = run(["xbps-query", "-p", "pkgver", name], timeout=30)
+            cm = re.match(r"^.+-([^-]+_\d+)$", cur.strip())
+            found.append(item("xbps", name, cm.group(1) if cm else "?", new, p[3] if len(p) > 3 else ""))
+    return found
+
+
+# ── Flatpak ──────────────────────────────────────────────────────────────
+def check_flatpak():
+    rc, out, err = run(["flatpak", "remote-ls", "--updates", "--app", "--columns=application,name,version,origin"],
+                       timeout=600)
+    if rc != 0:
+        raise RuntimeError(err.strip()[-400:] or "flatpak failed")
+    _, cur, _ = run(["flatpak", "list", "--app", "--columns=application,version"], timeout=120)
+    installed = dict(l.split("\t", 1) for l in cur.splitlines() if "\t" in l)
+    found = []
+    for l in out.splitlines():
+        p = l.split("\t")
+        if len(p) >= 4:
+            found.append(item("flatpak", p[1] or p[0], installed.get(p[0], "") or "?", p[2] or "latest", p[3]))
+    return found
+
+
+SOURCES = [
+    # id, name, available, check, upgrade command, sync command
+    ("portage", "Portage", lambda: have("emerge") and have("portageq") and have("git"), check_portage, None, ["emaint", "sync", "-a"]),
+    ("pacman", "pacman", lambda: have("pacman"), check_pacman, None, None),
+    ("dnf", "DNF", lambda: have("dnf") or have("dnf5"), check_dnf, None, None),
+    ("apt", "APT", lambda: have("apt") and os.path.isdir("/var/lib/dpkg"), check_apt, None, ["apt", "update"]),
+    ("xbps", "XBPS", lambda: have("xbps-install"), check_xbps, None, None),
+    ("flatpak", "Flatpak", lambda: have("flatpak"), check_flatpak, None, None),
+]
+
+
+def check(scheduled):
+    cfg = settings()
+    important = cfg.get("important", IMPORTANT)
+    ignore = cfg.get("ignore", [])
+    if scheduled:
+        reason = busy_reason()
+        if reason:
+            return {"busy": reason}
+    os.makedirs(CACHE, exist_ok=True)
+    result = {"busy": "", "sources": [], "updates": [], "news": 0, "checked": int(time.time())}
+    for sid, name, available, fn, _, sync in SOURCES:
+        if not available():
+            continue
+        src = {"id": sid, "name": name, "error": "", "synced": 0, "canSync": sync is not None}
+        try:
+            if sid == "portage":
+                found, src["synced"] = fn()
+                result["news"] = portage_news()
+            else:
+                found = fn()
+                if sid == "apt":
+                    src["synced"] = apt_synced()
+        except Exception as e:
+            found, src["error"] = [], str(e) or e.__class__.__name__
+        found = [u for u in found if not matches(u["name"], ignore)]
+        for u in found:
+            u["important"] = matches(u["name"], important)
+        src["count"] = len(found)
+        result["sources"].append(src)
+        result["updates"] += found
+    return result
+
+
+# ── In a terminal ────────────────────────────────────────────────────────
+def say(text, colour="35"):
+    print(f"\n\033[1;{colour}m:: {text}\033[0m", flush=True)
+
+
+def sh(cmd):
+    print("\033[2m$ " + " ".join(cmd) + "\033[0m", flush=True)
+    return subprocess.call(cmd)
+
+
+def upgrade(which):
+    sudo = (settings().get("sudo") or ("sudo" if have("sudo") else "doas" if have("doas") else "su -c")).split()
+    ids = [s[0] for s in SOURCES if s[2]()]
+    for sid in [i for i in ids if not which or i in which]:
+        if sid == "portage":
+            say("Portage: sync, @world, preserved rebuilds, depclean")
+            sh(sudo + ["emaint", "sync", "-a"])
+            if sh(sudo + ["emerge", "-avuDN", "--with-bdeps=y", "@world"]) == 0:
+                rc, out, _ = run(["emerge", "-p", "--quiet", "@preserved-rebuild"], timeout=300)
+                if any(l.startswith("[") for l in out.splitlines()):
+                    sh(sudo + ["emerge", "@preserved-rebuild"])
+                sh(sudo + ["emerge", "-a", "--depclean"])
+            n = portage_news()
+            if n:
+                say(f"{n} unread Gentoo news item(s): eselect news read", "33")
+        elif sid == "pacman":
+            helper = next((h for h in ("paru", "yay") if have(h)), None)
+            say("pacman" + (" + AUR (" + helper + ")" if helper else ""))
+            sh([helper, "-Syu"] if helper else sudo + ["pacman", "-Syu"])
+        elif sid == "dnf":
+            say("DNF")
+            sh(sudo + ["dnf", "upgrade"])
+        elif sid == "apt":
+            say("APT")
+            if sh(sudo + ["apt", "update"]) == 0:
+                sh(sudo + ["apt", "upgrade"])
+        elif sid == "xbps":
+            say("XBPS")
+            sh(sudo + ["xbps-install", "-Su"])
+        elif sid == "flatpak":
+            say("Flatpak")
+            sh(["flatpak", "update"])
+    say("Done. Press Enter to close.", "32")
+    try:
+        input()
+    except EOFError:
+        pass
+
+
+def sync():
+    sudo = (settings().get("sudo") or ("sudo" if have("sudo") else "doas")).split()
+    for sid, name, available, _, _, cmd in SOURCES:
+        if cmd and available():
+            say("Sync " + name)
+            sh(sudo + cmd)
+    say("Done. Press Enter to close.", "32")
+    try:
+        input()
+    except EOFError:
+        pass
+
+
+def main():
+    args = sys.argv[1:]
+    if not args or args[0] == "check":
+        json.dump(check("--scheduled" in args), sys.stdout)
+        sys.stdout.write("\n")
+    elif args[0] == "upgrade":
+        upgrade(args[1:])
+    elif args[0] == "sync":
+        sync()
+    else:
+        print(__doc__, file=sys.stderr)
+        sys.exit(2)
+
+
+if __name__ == "__main__":
+    main()
