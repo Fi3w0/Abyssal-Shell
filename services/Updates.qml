@@ -14,9 +14,10 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    property var result: ({ sources: [], updates: [], news: 0 })
+    property var result: ({ sources: [], updates: [], news: 0, unchecked: true })
     property bool checking: false
     property string busy: ""
+    property string checkingConfig: ""
     readonly property var updates: result.updates || []
     readonly property var sources: result.sources || []
     readonly property int count: updates.length
@@ -28,6 +29,7 @@ Singleton {
 
     function check(scheduled) {
         if (checker.running) return
+        checkingConfig = JSON.stringify(UpdateConfig.data)
         checker.command = [Quickshell.shellPath("scripts/updates"), "check"].concat(scheduled ? ["--scheduled"] : [])
         checking = true
         checker.running = true
@@ -51,11 +53,15 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 root.checking = false
+                if (root.checkingConfig !== JSON.stringify(UpdateConfig.data)) {
+                    if (UpdateConfig.automatic) settingsDelay.restart()
+                    return
+                }
                 let r
                 try { r = JSON.parse(text) } catch (e) { return }
                 if (r.busy) {
                     root.busy = r.busy
-                    retry.restart()
+                    if (UpdateConfig.automatic) retry.restart()
                     return
                 }
                 root.busy = ""
@@ -76,7 +82,13 @@ Singleton {
         id: cache
         path: Quickshell.statePath("updates.json")
         printErrors: false
-        onLoaded: { try { root.result = JSON.parse(text()) } catch (e) {} }
+        onLoaded: {
+            try {
+                const saved = JSON.parse(text())
+                if (saved.policy && Object.keys(UpdateConfig.sourcePolicy).every(k =>
+                    JSON.stringify(saved.policy[k]) === JSON.stringify(UpdateConfig.sourcePolicy[k]))) root.result = saved
+            } catch (e) {}
+        }
     }
     // What the last toast was about: "source name version" per update.
     property var told: []
@@ -98,9 +110,22 @@ Singleton {
     }
 
     // ── When to check ───────────────────────────────────────────────────
-    Timer { running: true; interval: 90 * 1000; onTriggered: root.check(true) }
-    Timer { running: true; repeat: true; interval: 60 * 60 * 1000; onTriggered: root.check(true) }
+    Timer { running: UpdateConfig.loaded && UpdateConfig.automatic && UpdateConfig.onStartup; interval: 90 * 1000; onTriggered: root.check(true) }
+    Timer { running: UpdateConfig.loaded && UpdateConfig.automatic; repeat: true; interval: Math.max(1, UpdateConfig.intervalMinutes) * 60000; onTriggered: root.check(true) }
     Timer { id: retry; interval: 10 * 60 * 1000; onTriggered: root.check(true) }
+    Timer { id: settingsDelay; interval: 1500; onTriggered: if (UpdateConfig.automatic) root.check(true) }
+    Connections {
+        target: UpdateConfig
+        function onOptionsChanged() {
+            retry.stop()
+            afterLog.stop()
+            root.result = ({ sources: [], updates: [], news: 0, unchecked: true })
+            root.busy = ""
+            cache.setText(JSON.stringify(root.result))
+            if (UpdateConfig.automatic) settingsDelay.restart()
+            else settingsDelay.stop()
+        }
+    }
 
     // A package manager wrote its log: check once it has been quiet a minute.
     Timer { id: afterLog; interval: 60 * 1000; onTriggered: root.check(false) }
@@ -112,7 +137,7 @@ Singleton {
             preload: false
             watchChanges: true
             printErrors: false
-            onFileChanged: afterLog.restart()
+            onFileChanged: if (UpdateConfig.automatic && UpdateConfig.afterTransactions) afterLog.restart()
         }
     }
 

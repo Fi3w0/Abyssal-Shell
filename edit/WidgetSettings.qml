@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Dialogs
+import QtQuick.Controls as Controls
 import "../components"
 import "../services"
 
@@ -167,6 +168,21 @@ ColumnLayout {
         visible: root.widgetId === "gpu" || root.widgetId === "gpu-temp"
         text: "Unavailable readings show —. Sleeping GPUs are left asleep."
         color: Theme.subtext; font { family: Theme.font; pixelSize: 11 } wrapMode: Text.WordWrap
+    }
+    Loader {
+        active: root.widgetId === "updates"
+        Layout.fillWidth: true
+        sourceComponent: Component {
+            Flickable {
+                implicitHeight: Math.min(options.implicitHeight, 360)
+                contentWidth: width
+                contentHeight: options.implicitHeight
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                UpdateSettings { id: options; width: parent.width }
+                Controls.ScrollBar.vertical: Controls.ScrollBar {}
+            }
+        }
     }
     FileDialog {
         id: imageDialog

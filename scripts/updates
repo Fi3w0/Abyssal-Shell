@@ -7,11 +7,13 @@
 
 Sources, each used only when its tool is installed, all checked without
 root and without touching the system's own databases:
-  portage  private shallow git copies of the configured repositories
-           (::gentoo from its git mirror) in $XDG_CACHE_HOME/abyssal/
-           updates/repos, then `emerge -puDNv @world` against them; ported
-           from Apdatifier Gentoo (an existing copy of its repos is moved
-           here once and symlinked back, so both share it)
+  portage  `emerge -puDNv @world` against the repositories portage already
+           has, so nothing is duplicated. When a configured repository is
+           missing locally (or has no metadata/md5-cache), a private shallow
+           git copy is cloned into $XDG_CACHE_HOME/abyssal/updates/repos as
+           a fallback; ported from Apdatifier Gentoo (an existing copy of
+           its repos is moved here once and symlinked back, so both
+           share it)
   pacman   checkupdates, else a private fakeroot database copy; AUR through
            paru or yay
   dnf      dnf check-update (dnf5 check-upgrade) with the user's own cache
@@ -33,6 +35,7 @@ import shutil
 import subprocess
 import sys
 import time
+import tempfile
 
 HOME = os.path.expanduser("~")
 CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.join(HOME, ".cache"), "abyssal", "updates")
@@ -48,7 +51,9 @@ def have(tool):
 
 def run(cmd, timeout=600, env=None):
     try:
-        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
+        command_env = dict(os.environ, **(env or {}))
+        command_env["LC_ALL"] = "C"
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=command_env)
         return p.returncode, p.stdout, p.stderr
     except (OSError, subprocess.SubprocessError) as e:
         return 127, "", str(e)
@@ -61,6 +66,115 @@ def settings():
         return data if isinstance(data, dict) else {}
     except (OSError, ValueError):
         return {}
+
+
+MANAGERS = {"auto", "none", "portage", "pacman", "paru", "yay", "dnf", "dnf5", "dnf4", "apt", "xbps"}
+
+
+def configure(changes):
+    """Merge known settings atomically; never replace an invalid config."""
+    if not isinstance(changes, dict):
+        raise ValueError("Settings must be an object")
+    for key, value in changes.items():
+        valid = (key == "intervalMinutes" and type(value) is int and 0 <= value <= 10080
+                 or key in ("onStartup", "afterTransactions", "includeAur", "flatpak") and type(value) is bool
+                 or key == "manager" and isinstance(value, str) and value in MANAGERS
+                 or key == "aurHelper" and value in ("auto", "paru", "yay")
+                 or key == "dnfRepoMode" and value in ("all", "selected")
+                 or key == "dnfRepos" and isinstance(value, list)
+                 and all(isinstance(v, str) and re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.:+/-]*", v) for v in value))
+        if not valid:
+            raise ValueError("Invalid update setting: " + key)
+    try:
+        with open(CONFIG) as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            raise ValueError("Existing updates.json is not an object")
+    except FileNotFoundError:
+        data = {}
+    data.update(changes)
+    os.makedirs(os.path.dirname(CONFIG), exist_ok=True)
+    path = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", dir=os.path.dirname(CONFIG), delete=False) as f:
+            path = f.name
+            json.dump(data, f, indent=2)
+            f.write("\n")
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(path, CONFIG)
+    finally:
+        if path and os.path.exists(path):
+            os.unlink(path)
+    return data
+
+
+def dnf_tool(cfg=None):
+    manager = (cfg or settings()).get("manager", "auto")
+    if manager == "dnf5":
+        choices = ["dnf5"]
+    elif manager == "dnf4":
+        choices = ["dnf4", "dnf"]
+        if have("dnf") and os.path.basename(os.path.realpath(shutil.which("dnf"))) == "dnf5":
+            choices = ["dnf4"]
+    else:
+        choices = ["dnf5", "dnf", "dnf4"]
+    tool = next((v for v in choices if have(v)), None)
+    if not tool:
+        raise RuntimeError("Selected DNF command is not installed")
+    return tool
+
+
+def dnf_flags(cfg=None):
+    cfg = cfg or settings()
+    if cfg.get("dnfRepoMode", "all") != "selected":
+        return []
+    repos = cfg.get("dnfRepos", [])
+    if not repos:
+        raise RuntimeError("Select at least one enabled DNF repository in update settings")
+    if not isinstance(repos, list) or not all(isinstance(v, str) and re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.:+/-]*", v) for v in repos):
+        raise RuntimeError("Invalid DNF repository selection")
+    return ["--repo=" + ",".join(repos)]
+
+
+def aur_helper(cfg=None):
+    cfg = cfg or settings()
+    if not cfg.get("includeAur", True):
+        return None
+    choice = cfg.get("manager") if cfg.get("manager") in ("paru", "yay") else cfg.get("aurHelper", "auto")
+    if choice != "auto":
+        if not have(choice):
+            raise RuntimeError("Selected AUR helper is not installed: " + choice)
+        return choice
+    return next((h for h in ("paru", "yay") if have(h)), None)
+
+
+def capabilities():
+    managers = ["portage"] if have("emerge") and have("portageq") and have("git") else []
+    managers += [v for v in ("pacman", "paru", "yay") if have(v) and have("pacman")]
+    managers += [v for v in ("dnf", "dnf5", "dnf4") if have(v)]
+    if have("apt") and os.path.isdir("/var/lib/dpkg"):
+        managers.append("apt")
+    if have("xbps-install"):
+        managers.append("xbps")
+    repos = []
+    if any(v in managers for v in ("dnf", "dnf5", "dnf4")):
+        tool = dnf_tool({"manager": "auto"})
+        if tool == "dnf5":
+            rc, out, _ = run([tool, "--cacheonly", "repo", "list", "--enabled", "--json"], timeout=30)
+            if rc == 0:
+                try:
+                    repos = [{"id": r["id"], "name": r.get("name", r["id"])} for r in json.loads(out)]
+                except (ValueError, KeyError, TypeError):
+                    pass
+        if not repos:
+            rc, out, _ = run([tool, "--cacheonly", "repolist", "--enabled", "-q"], timeout=30)
+            if rc == 0:
+                for line in out.splitlines():
+                    parts = line.split(None, 1)
+                    if len(parts) == 2 and parts[0] not in ("repo", "repoid"):
+                        repos.append({"id": parts[0], "name": parts[1]})
+    return {"managers": managers, "flatpak": have("flatpak"), "dnfRepos": repos}
 
 
 def matches(name, patterns):
@@ -123,13 +237,23 @@ def portage_repos():
             cur[m.group(1)] = m.group(2)
 
     out = ["[DEFAULT]", "main-repo = " + main]
+    gentoo_loc = ""
     for r in repos:
         name = r["name"]
         if not SAFE.match(name):
             continue
+        loc = r.get("location", "")
+        if name == main:
+            gentoo_loc = loc
+        # The check only ever --pretends, and portage already keeps these
+        # synced, so reading them in place is enough. Cloning a private copy
+        # cost 695 MB for ::gentoo plus a full `git fetch` on every check,
+        # to duplicate a tree that was already on disk.
+        if loc and os.path.isdir(os.path.join(loc, "metadata", "md5-cache")):
+            out += ["[" + name + "]", "location = " + loc]
+            continue
         url = "https://github.com/gentoo-mirror/gentoo.git" if name == "gentoo" else (
             r.get("sync-uri", "") if r.get("sync-type") == "git" else "")
-        loc = r.get("location", "")
         if url:
             d = os.path.join(repos_dir, name)
             if os.path.isdir(os.path.join(d, ".git")):
@@ -147,7 +271,7 @@ def portage_repos():
                 if run(["git", "clone", "-q", "--depth", "1", url, d], timeout=1800)[0] == 0:
                     loc = d
         out += ["[" + name + "]", "location = " + loc]
-    return "\n".join(out) + "\n", os.path.join(repos_dir, "gentoo")
+    return "\n".join(out) + "\n", gentoo_loc or os.path.join(repos_dir, "gentoo")
 
 
 def portage_selected():
@@ -248,9 +372,11 @@ def check_pacman():
         m = pairs.match(l)
         if m and "[ignored]" not in l:
             found.append(item("pacman", m.group(1), m.group(2), m.group(3), "repo"))
-    helper = next((h for h in ("paru", "yay") if have(h)), None)
+    helper = aur_helper()
     if helper:
-        _, out, _ = run([helper, "-Qua"], timeout=600)
+        rc, out, err = run([helper, "-Qua"], timeout=600)
+        if rc not in (0, 1) or rc == 1 and err.strip():
+            raise RuntimeError(err.strip() or helper + " could not check AUR updates")
         for l in out.splitlines():
             m = pairs.match(l)
             if m:
@@ -260,8 +386,8 @@ def check_pacman():
 
 # ── dnf ──────────────────────────────────────────────────────────────────
 def check_dnf():
-    dnf5 = have("dnf5")
-    cmd = ["dnf5", "check-upgrade", "-q"] if dnf5 else ["dnf", "check-update", "-q"]
+    tool = dnf_tool()
+    cmd = [tool, "check-upgrade" if tool == "dnf5" else "check-update", "-q"] + dnf_flags()
     rc, out, err = run(cmd, timeout=900)
     if rc not in (0, 100):  # 100: updates available
         raise RuntimeError(err.strip()[-400:] or "dnf failed")
@@ -340,11 +466,26 @@ SOURCES = [
     # id, name, available, check, upgrade command, sync command
     ("portage", "Portage", lambda: have("emerge") and have("portageq") and have("git"), check_portage, None, ["emaint", "sync", "-a"]),
     ("pacman", "pacman", lambda: have("pacman"), check_pacman, None, None),
-    ("dnf", "DNF", lambda: have("dnf") or have("dnf5"), check_dnf, None, None),
+    ("dnf", "DNF", lambda: have("dnf") or have("dnf5") or have("dnf4"), check_dnf, None, None),
     ("apt", "APT", lambda: have("apt") and os.path.isdir("/var/lib/dpkg"), check_apt, None, ["apt", "update"]),
     ("xbps", "XBPS", lambda: have("xbps-install"), check_xbps, None, None),
     ("flatpak", "Flatpak", lambda: have("flatpak"), check_flatpak, None, None),
 ]
+
+
+def selected_sources(cfg):
+    manager = cfg.get("manager", "auto")
+    if manager not in MANAGERS:
+        raise RuntimeError("Unknown package manager: " + str(manager))
+    source = {"paru": "pacman", "yay": "pacman", "dnf5": "dnf", "dnf4": "dnf"}.get(manager, manager)
+    return [s for s in SOURCES if (s[0] == "flatpak" and cfg.get("flatpak", True))
+            or (s[0] != "flatpak" and (source == "auto" or s[0] == source))]
+
+
+def source_policy(cfg):
+    return {"manager": cfg.get("manager", "auto"), "flatpak": cfg.get("flatpak", True),
+            "includeAur": cfg.get("includeAur", True), "aurHelper": cfg.get("aurHelper", "auto"),
+            "dnfRepoMode": cfg.get("dnfRepoMode", "all"), "dnfRepos": cfg.get("dnfRepos", [])}
 
 
 def check(scheduled):
@@ -356,9 +497,11 @@ def check(scheduled):
         if reason:
             return {"busy": reason}
     os.makedirs(CACHE, exist_ok=True)
-    result = {"busy": "", "sources": [], "updates": [], "news": 0, "checked": int(time.time())}
-    for sid, name, available, fn, _, sync in SOURCES:
+    result = {"busy": "", "sources": [], "updates": [], "news": 0, "checked": int(time.time()), "policy": source_policy(cfg)}
+    for sid, name, available, fn, _, sync in selected_sources(cfg):
         if not available():
+            if cfg.get("manager", "auto") not in ("auto", "none") and sid != "flatpak":
+                result["sources"].append({"id": sid, "name": name, "error": "Selected package manager is not installed", "count": 0, "synced": 0, "canSync": False})
             continue
         src = {"id": sid, "name": name, "error": "", "synced": 0, "canSync": sync is not None}
         try:
@@ -391,8 +534,9 @@ def sh(cmd):
 
 
 def upgrade(which):
-    sudo = (settings().get("sudo") or ("sudo" if have("sudo") else "doas" if have("doas") else "su -c")).split()
-    ids = [s[0] for s in SOURCES if s[2]()]
+    cfg = settings()
+    sudo = (cfg.get("sudo") or ("sudo" if have("sudo") else "doas" if have("doas") else "su -c")).split()
+    ids = [s[0] for s in selected_sources(cfg) if s[2]()]
     for sid in [i for i in ids if not which or i in which]:
         if sid == "portage":
             say("Portage: sync, @world, preserved rebuilds, depclean")
@@ -406,12 +550,12 @@ def upgrade(which):
             if n:
                 say(f"{n} unread Gentoo news item(s): eselect news read", "33")
         elif sid == "pacman":
-            helper = next((h for h in ("paru", "yay") if have(h)), None)
+            helper = aur_helper(cfg)
             say("pacman" + (" + AUR (" + helper + ")" if helper else ""))
             sh([helper, "-Syu"] if helper else sudo + ["pacman", "-Syu"])
         elif sid == "dnf":
             say("DNF")
-            sh(sudo + ["dnf", "upgrade"])
+            sh(sudo + [dnf_tool(cfg), "upgrade"] + dnf_flags(cfg))
         elif sid == "apt":
             say("APT")
             if sh(sudo + ["apt", "update"]) == 0:
@@ -431,7 +575,7 @@ def upgrade(which):
 
 def sync():
     sudo = (settings().get("sudo") or ("sudo" if have("sudo") else "doas")).split()
-    for sid, name, available, _, _, cmd in SOURCES:
+    for sid, name, available, _, _, cmd in selected_sources(settings()):
         if cmd and available():
             say("Sync " + name)
             sh(sudo + cmd)
@@ -451,6 +595,12 @@ def main():
         upgrade(args[1:])
     elif args[0] == "sync":
         sync()
+    elif args[0] == "capabilities":
+        json.dump(capabilities(), sys.stdout)
+        sys.stdout.write("\n")
+    elif args[0] == "configure" and len(args) == 2:
+        json.dump(configure(json.loads(args[1])), sys.stdout)
+        sys.stdout.write("\n")
     else:
         print(__doc__, file=sys.stderr)
         sys.exit(2)

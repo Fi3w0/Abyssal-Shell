@@ -47,11 +47,15 @@ ColumnLayout {
         return [newV.slice(0, i), newV.slice(i)]
     }
 
-    PageHeader {
-        icon: "package"
-        title: "Updates"
-        showBack: root.showBack
-        onBack: root.back()
+    RowLayout {
+        Layout.fillWidth: true
+        PageHeader {
+            icon: "package"
+            title: "Updates"
+            showBack: root.showBack
+            onBack: root.back()
+        }
+        BarButton { icon: "sliders"; onClicked: Shell.openPage("update-settings") }
     }
 
     // Count, last sync, news, refresh.
@@ -64,7 +68,7 @@ ColumnLayout {
             elide: Text.ElideRight
             text: Updates.checking ? "Checking…"
                 : Updates.busy ? "Waiting: " + Updates.busy
-                : (Updates.count ? Updates.count + (Updates.count === 1 ? " update" : " updates") : "Up to date")
+                : (Updates.result.unchecked ? "Check for updates" : Updates.count ? Updates.count + (Updates.count === 1 ? " update" : " updates") : "Up to date")
                   + (Updates.synced ? " · synced " + root.ago(Updates.synced) : "")
             color: Theme.subtext
             font { family: Theme.font; pixelSize: 11 }
@@ -115,7 +119,7 @@ ColumnLayout {
 
     // Up to date
     ColumnLayout {
-        visible: Updates.count === 0 && !Updates.errors
+        visible: Updates.count === 0 && !Updates.errors && !Updates.result.unchecked
         Layout.fillWidth: true
         Layout.topMargin: 18
         Layout.bottomMargin: 18

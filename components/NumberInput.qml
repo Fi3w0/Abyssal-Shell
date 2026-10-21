@@ -51,7 +51,7 @@ Rectangle {
         selectionColor: Theme.accent
         selectedTextColor: Theme.crust
         inputMethodHints: Qt.ImhDigitsOnly
-        validator: IntValidator { bottom: 0; top: 9999 }
+        validator: IntValidator { bottom: root.minimum; top: root.maximum }
         Accessible.name: root.label
         onAccepted: root.commit()
         onActiveFocusChanged: {
