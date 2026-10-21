@@ -44,6 +44,7 @@ Singleton {
             const source = entry.video || entry.image || ""
             if (!source) continue
             out.push({
+                id: screen.name,
                 key: [screen.name, source, entry.hwdec || "auto", entry.options || "", entry.fit || "crop"].join("\n"),
                 output: screen.name,
                 source: source,
@@ -155,11 +156,13 @@ Singleton {
         onExited: root.ready = true
     }
 
-    // Keyed, so a change to one output's entry restarts only that player.
+    // Keyed by output, so the other outputs' players keep running when one
+    // output's entry changes. A changed entry updates its delegate in place
+    // (ScriptModel keeps the row), so the player restarts itself on a new key.
     ScriptModel {
         id: players
         values: root.ready ? root.entries : []
-        objectProp: "key"
+        objectProp: "id"
     }
     Instantiator {
         model: players
@@ -183,11 +186,19 @@ Singleton {
                 ]
             }
 
-            // modelData is assigned after creation; start once it is there.
+            // modelData is assigned after creation; start once it is there,
+            // and again (stop, then start) whenever this output's entry changes.
             property Timer starter: Timer {
                 interval: 0
                 running: true
                 onTriggered: player.process.running = true
+            }
+            readonly property string key: modelData.key
+            onKeyChanged: {
+                if (!process.running) return
+                process.running = false
+                starter.interval = 150
+                starter.restart()
             }
         }
         }
