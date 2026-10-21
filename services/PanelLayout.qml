@@ -28,11 +28,15 @@ import Quickshell.Io
 //   visibility  always | autohide | below (no reserved space)
 //   items       widget ids or { "id": ..., options }, "spacer" splits groups
 //
+// The quick menu's grid lives here too, as a top-level "quickMenu": a
+// list of { "id", "w", "h" } in order, 4 columns wide; missing = default.
+// The header item may carry "icon" (a CustomIcon spec, like the logo).
+//
 // Version 1 files (bars with start/center/end) are migrated on load.
 Singleton {
     id: root
 
-    readonly property string dir: Quickshell.env("HOME") + "/.config/abyssal"
+    readonly property string dir: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/abyssal"
     readonly property string path: dir + "/layout.json"
 
     readonly property var edges: ["top", "bottom", "left", "right"]
@@ -43,12 +47,58 @@ Singleton {
     property bool firstRun: false
     property var data: ({ version: 2, monitors: {} })
 
+    // ── Quick menu grid ─────────────────────────────────────────────────
+    readonly property var defaultQuickMenu: [
+        { id: "header", w: 4, h: 1 },
+        { id: "wifi", w: 2, h: 1 }, { id: "bluetooth", w: 2, h: 1 },
+        { id: "dnd", w: 1, h: 1 }, { id: "caffeine", w: 1, h: 1 }, { id: "mic", w: 1, h: 1 }, { id: "layout", w: 1, h: 1 },
+        { id: "volume", w: 4, h: 1 }, { id: "micvolume", w: 4, h: 1 },
+        { id: "media", w: 4, h: 2 }
+    ]
+    readonly property var quickMenu: data && Array.isArray(data.quickMenu) ? data.quickMenu : defaultQuickMenu
+
+    // Sets or clears ("" ) one extra field on the quick menu items with `id`.
+    function setQuickMenuField(id, key, value) {
+        setQuickMenu(quickMenu.map(i => {
+            const o = Object.assign({}, i)
+            if (o.id === id) { if (value) o[key] = value; else delete o[key] }
+            return o
+        }))
+    }
+
+    // Hide tiles that can't do anything here (Caffeine with nothing that
+    // idles, Bluetooth without an adapter) outside edit mode.
+    readonly property bool quickMenuHideUnavailable: data ? data.quickMenuHideUnavailable === true : false
+    function setQuickMenuHideUnavailable(on) {
+        const next = clone(data)
+        if (on) next.quickMenuHideUnavailable = true
+        else delete next.quickMenuHideUnavailable
+        data = next
+        save()
+    }
+
+    function setQuickMenu(list) {
+        const next = clone(data)
+        if (list === null) delete next.quickMenu
+        else next.quickMenu = list.map(i => {
+            const o = { id: i.id, w: i.w, h: i.h }
+            if (i.icon) o.icon = i.icon
+            return o
+        })
+        data = next
+        save()
+    }
+
+    // Populate panel identities before Quickshell matches windows during
+    // a reload. An async empty model destroys the old reserved areas.
+    Component.onCompleted: file.text()
+
     // ── Presets ─────────────────────────────────────────────────────────
     readonly property var topBar: ({
         edge: "top", width: "islands", align: "center", length: 60, look: "glass", floating: true,
         size: 42, visibility: "always",
         items: ["logo", "workspaces", "window-title", "spacer", "clock", "spacer",
-                "ram", "cpu", "temp", "battery", "network", "separator",
+                "ram", "cpu", "temp", "battery", "network", "keyboard-layout", "separator",
                 "recording", "bluetooth", "volume", "separator", "tray", "quick-settings", "power"]
     })
     readonly property var presets: ({
@@ -125,6 +175,7 @@ Singleton {
             look: p.look === "solid" ? "solid" : "glass",
             floating: p.floating !== false,
             size: Math.max(minSize, Math.min(maxSize, p.size || (vertical ? 46 : 42))),
+            spacing: Math.max(-16, Math.min(16, Number.isFinite(p.spacing) ? p.spacing : 7)),
             visibility: ["always", "autohide", "below"].includes(p.visibility) ? p.visibility : "always",
             // Indices stay aligned with the stored list so edits address
             // the entry the panel shows; unknown ids render as nothing.
@@ -190,6 +241,7 @@ Singleton {
             const p = find(panels, edge)
             if (!p) return
             if (key === "size") value = Math.max(minSize, Math.min(maxSize, value))
+            if (key === "spacing") value = Math.max(-16, Math.min(16, value))
             if (key === "length") value = Math.max(10, Math.min(100, value))
             p[key] = value
         })
@@ -236,26 +288,35 @@ Singleton {
             const p = find(panels, edge)
             if (p && p.items) p.items.splice(index, 1)
         })
+        Shell.widgetRemoved(output, edge, index)
     }
 
     // toIndex is measured without the moved item, as a drop position is.
     function moveItem(output, edge, from, to) {
+        let movedTo = from
         edit(output, panels => {
             const p = find(panels, edge)
             if (!p || !p.items) return
             const item = p.items.splice(from, 1)[0]
             if (item === undefined) return
-            p.items.splice(Math.max(0, Math.min(to, p.items.length)), 0, item)
+            movedTo = Math.max(0, Math.min(to, p.items.length))
+            p.items.splice(movedTo, 0, item)
         })
+        Shell.widgetMoved(output, edge, from, movedTo)
     }
 
     // Sets one option on one widget ({ id: "clock", date: true }).
     function setItemOption(output, edge, index, key, value) {
         edit(output, panels => {
             const p = find(panels, edge)
-            if (!p || !p.items || index >= p.items.length) return
+            if (!p || !p.items || index < 0 || index >= p.items.length) return
             let item = p.items[index]
             if (typeof item === "string") item = { id: item }
+            const spec = Widgets.options(item.id).find(o => o.key === key)
+            if (spec && spec.type === "number") {
+                if (typeof value !== "number" || !Number.isFinite(value)) return
+                value = Math.max(spec.minimum, Math.min(spec.maximum, Math.round(value)))
+            }
             item[key] = value
             p.items[index] = item
         })
@@ -298,6 +359,8 @@ Singleton {
 
     FileView {
         id: file
+        preload: false
+        blockLoading: true
         path: root.path
         watchChanges: true
         printErrors: false
