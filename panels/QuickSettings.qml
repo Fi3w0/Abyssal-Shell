@@ -25,16 +25,23 @@ Scope {
     readonly property var qs: Shell.quickSettings
     readonly property bool open: qs !== null && screen && qs.output === screen.name
     // Edge of the panel it last opened from, kept while it animates out.
-    property string lastEdge: "top"
-    onQsChanged: if (qs && open) lastEdge = qs.edge
-    readonly property string edge: lastEdge
+    property var lastAnchor: ({ edge: "top" })
+    function rememberAnchor() {
+        const current = Shell.quickSettings
+        // Do not depend on `open` here: its binding may still have the
+        // previous value while the changed signal is being delivered.
+        if (current && screen && current.output === screen.name) lastAnchor = current
+    }
+    onQsChanged: rememberAnchor()
+    readonly property string edge: lastAnchor.edge
+    readonly property bool vertical: edge === "left" || edge === "right"
     // The window stays up until the closing animation is done; the page and
     // edit mode reset only then, so closing doesn't jump back first.
     property bool shown: false
     // Detail page slid in over the main view: "", "wifi", "bluetooth", "sound".
     property string page: ""
     property bool editing: false
-    onOpenChanged: if (open) shown = true
+    onOpenChanged: if (open) { rememberAnchor(); shown = true }
     onShownChanged: if (!shown) { page = ""; editing = false; dragFrom = -1 }
 
     readonly property int gap: 6
@@ -240,9 +247,20 @@ Scope {
 
         anchors.top: root.edge !== "bottom"
         anchors.bottom: root.edge === "bottom"
-        anchors.left: root.edge === "left"
-        anchors.right: root.edge !== "left"
-        margins { top: 8; bottom: 8; left: 8; right: 8 }
+        anchors.left: root.edge !== "right"
+        anchors.right: root.edge === "right"
+        readonly property real inset: typeof root.lastAnchor.inset === "number" ? root.lastAnchor.inset + 14 : 8
+        readonly property real along: {
+            const span = root.vertical ? root.screen.height : root.screen.width
+            const size = root.vertical ? implicitHeight : implicitWidth
+            const pos = typeof root.lastAnchor.pos === "number" ? root.lastAnchor.pos
+                : root.vertical ? size / 2 + 8 : span - size / 2 - 8
+            return Math.max(8, Math.min(Math.max(8, span - size - 8), Math.round(pos - size / 2)))
+        }
+        margins.top: root.edge === "top" ? inset : root.vertical ? along : 0
+        margins.bottom: root.edge === "bottom" ? inset : 0
+        margins.left: root.edge === "left" ? inset : root.vertical ? 0 : along
+        margins.right: root.edge === "right" ? inset : 0
         exclusiveZone: 0
         color: "transparent"
         implicitWidth: 380

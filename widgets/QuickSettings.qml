@@ -9,5 +9,8 @@ BarButton {
 
     icon: "sliders"
     active: ctx ? Shell.quickSettings !== null && Shell.quickSettings.output === ctx.output : false
-    onClicked: Shell.toggleQuickSettings(ctx.output, ctx.edge)
+    onClicked: {
+        const p = mapToItem(null, width / 2, height / 2)
+        Shell.toggleQuickSettings(ctx.output, ctx.edge, ctx.vertical ? p.y : p.x, ctx.thickness)
+    }
 }

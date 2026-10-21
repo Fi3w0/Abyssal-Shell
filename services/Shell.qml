@@ -149,10 +149,11 @@ Singleton {
         powerOn = powerOn === output ? "" : output
     }
 
-    function toggleQuickSettings(output, edge) {
+    function toggleQuickSettings(output, edge, pos = null, inset = null) {
         launcherOn = ""
         detail = null
-        quickSettings = quickSettings && quickSettings.output === output ? null : { output: output, edge: edge }
+        quickSettings = quickSettings && quickSettings.output === output ? null
+            : { output: output, edge: edge, pos: pos, inset: inset }
     }
 
     // A popup page (wifi, clipboard, updates…) centred on the first panel of
