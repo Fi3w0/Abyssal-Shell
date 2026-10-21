@@ -71,6 +71,10 @@ def codex():
                 mins = w.get("window_minutes") or 0
                 name = "5 hours" if mins == 300 else "Week" if mins == 10080 else (f"{mins // 60} hours" if mins else key)
                 wins.append(window(name, w.get("used_percent"), w.get("resets_at"), mins))
+            # Codex also logs other limits (e.g. "premium") with no windows;
+            # keep looking for the newest record that has them.
+            if not wins:
+                continue
             ts = ev.get("timestamp")
             try:
                 updated = calendar.timegm(time.strptime(ts[:19], "%Y-%m-%dT%H:%M:%S")) if ts else int(os.path.getmtime(path))
