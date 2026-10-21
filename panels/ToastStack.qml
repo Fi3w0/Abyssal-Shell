@@ -49,11 +49,12 @@ PanelWindow {
                 const t = toastModel.get(i)
                 if (!t.closing && t.app === item.app && t.title === item.title && t.body === item.body) {
                     toastModel.setProperty(i, "tid", item.nid)
+                    toastModel.setProperty(i, "clickable", item.hasDefault)
                     toastModel.setProperty(i, "repeats", t.repeats + 1)
                     return
                 }
             }
-            toastModel.append({ tid: item.nid, app: item.app, title: item.title, body: item.body, icon: item.icon, closing: false, repeats: 1 })
+            toastModel.append({ tid: item.nid, app: item.app, title: item.title, body: item.body, icon: item.icon, closing: false, repeats: 1, clickable: item.hasDefault })
             while (toastModel.count > Notifications.maxToasts) toastModel.remove(0)
         }
     }
@@ -102,7 +103,15 @@ PanelWindow {
                     onTriggered: if (toast.index >= 0 && toast.index < toastModel.count) toastModel.remove(toast.index)
                 }
 
-                MouseArea { id: hover; anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.NoButton }
+                // Clicking a toast opens what it is about (its default action).
+                MouseArea {
+                    id: hover
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    acceptedButtons: toast.model.clickable ? Qt.LeftButton : Qt.NoButton
+                    cursorShape: toast.model.clickable ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: { Notifications.invoke(toast.model.tid, "default"); root.close(toast.model.tid) }
+                }
 
                 RowLayout {
                     id: row

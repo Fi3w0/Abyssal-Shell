@@ -17,8 +17,11 @@ building it. The installer and the settings app are tracked separately.
       live video preview, / search, W = theme from wallpaper (k-means
       palette in `scripts/wall-index`). Themes are JSON files now; a
       theme editor waits for the settings app.
-- [ ] **Removable drives.** A notification or popup when a drive is plugged
-      in, with open and eject (UDisks over D-Bus, no new packages).
+- [x] **Removable drives.** udisks2 (lsblk + gdbus monitor + udisksctl, polkit
+      allows it without an agent): toast on plug-in (click opens the panel),
+      bar widget shown while a drive is in, quick-menu tile, panel with
+      partitions, free space, Open (mounts first) and Eject (power-off).
+      Toasts are clickable now (default action).
 - [x] **Updates widget.** `scripts/updates`: Portage (private shallow repo
       copies + emerge -puDNv, from Apdatifier Gentoo, sharing its copy),
       pacman + AUR, DNF, APT, XBPS, Flatpak. Bar widget, quick-menu tile,

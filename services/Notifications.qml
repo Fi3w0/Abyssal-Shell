@@ -24,7 +24,8 @@ Singleton {
 
     // `quiet`: into the history only, no toast and no unread dot (the ones
     // the server hands back after a shell reload, like Plasma does).
-    function push(app, title, body, appIcon, notification, quiet) {
+    // `onClick`: for the shell's own notifications, run when it is clicked.
+    function push(app, title, body, appIcon, notification, quiet, onClick) {
         const n = notification || null
         const item = {
             nid: Date.now() + Math.random(),
@@ -35,7 +36,8 @@ Singleton {
             ts: Date.now(),
             time: Qt.formatDateTime(new Date(), "hh:mm"),
             notification: n,
-            hasDefault: n ? n.actions.some(a => a.identifier === "default") : false,
+            onClick: onClick || null,
+            hasDefault: n ? n.actions.some(a => a.identifier === "default") : typeof onClick === "function",
             actions: n ? n.actions.filter(a => a.identifier !== "default").map(a => ({ id: a.identifier, text: a.text })) : []
         }
         const next = history.slice()
@@ -52,7 +54,8 @@ Singleton {
     // then removes it.
     function invoke(nid, id) {
         const item = history.find(i => i.nid === nid)
-        if (item && item.notification) {
+        if (item && id === "default" && item.onClick) item.onClick()
+        else if (item && item.notification) {
             const action = item.notification.actions.find(a => a.identifier === id)
             if (action) action.invoke()
         }

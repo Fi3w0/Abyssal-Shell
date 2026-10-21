@@ -42,6 +42,7 @@ Singleton {
         "notifications":  { file: "NotificationBell.qml", name: "Notifications", icon: "bell", cat: "status", desc: "Notification centre, unread dot" },
         "clipboard":      { file: "Clipboard.qml",     name: "Clipboard",       icon: "clipboard", cat: "status", desc: "Clipboard history" },
         "updates":        { file: "Updates.qml",       name: "Updates",         icon: "package", cat: "system", desc: "Pending package updates (Portage, pacman, DNF, APT, XBPS, Flatpak)" },
+        "drives":         { file: "Drives.qml",        name: "Drives",          icon: "usb", cat: "status", desc: "Removable drives: open, eject (shows up when one is connected)" },
         "wallpaper":      { file: "WallpaperButton.qml", name: "Wallpaper",     icon: "image", cat: "shell", desc: "Wallpaper picker and theme from wallpaper" },
         "volume":         { file: "Volume.qml",        name: "Volume",          icon: "volume-high", cat: "status", desc: "Click mutes, scroll changes it" },
         "recording":      { file: "Recording.qml",     name: "Recording",       icon: "record", cat: "status", desc: "Lit while a recorder runs" },
@@ -108,6 +109,8 @@ Singleton {
             extra = [choice("always", "Display", [[false, "While recording"], [true, "Always"]], false)]
         } else if (["power", "quick-settings", "bluetooth", "notifications", "clipboard", "wallpaper"].includes(id)) {
             extra = [numeric("iconSize", "Icon size", 14, 26, 17, "px")]
+        } else if (id === "drives") {
+            extra = [numeric("iconSize", "Icon size", 14, 26, 17, "px"), choice("whenNone", "With no drives", [["hide", "Hide"], ["show", "Show"]], "hide")]
         } else if (id === "updates") {
             extra = [numeric("iconSize", "Icon size", 14, 26, 17, "px"), choice("whenNone", "With no updates", [["hide", "Hide"], ["show", "Show"]], "hide")]
         } else if (id === "task-manager") {

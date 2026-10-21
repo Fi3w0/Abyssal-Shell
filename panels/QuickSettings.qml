@@ -53,7 +53,8 @@ Scope {
         micvolume: { label: "Mic volume",      icon: "mic",         sizes: [[4, 1], [2, 1]] },
         media:     { label: "Media player",    icon: "play",        sizes: [[4, 2], [2, 2]] },
         wallpaper: { label: "Wallpaper",       icon: "image",       sizes: [[2, 1], [1, 1]] },
-        updates:   { label: "Updates",         icon: "package",     sizes: [[2, 1], [1, 1]] }
+        updates:   { label: "Updates",         icon: "package",     sizes: [[2, 1], [1, 1]] },
+        drives:    { label: "Drives",          icon: "usb",         sizes: [[2, 1], [1, 1]] }
     })
     // Ids this version doesn't know (an older or newer file) are skipped;
     // unavailable tiles too when hidden (never while editing).
@@ -176,6 +177,11 @@ Scope {
             return { icon: "image", title: "Wallpaper", on: Appearance.fromWallpaper, accent: Theme.accent,
                      detail: Appearance.fromWallpaper ? "Theme follows it" : Themes.name(Themes.activeId),
                      action: () => Shell.toggleWallpaperPicker(root.screen.name) }
+        case "drives":
+            return { icon: "usb", title: "Drives", on: Drives.count > 0, accent: Theme.accent, page: "drives",
+                     available: Drives.count > 0,
+                     detail: Drives.count ? (Drives.count === 1 ? Drives.drives[0].name : Drives.count + " connected") : "None connected",
+                     action: () => root.page = "drives" }
         case "updates":
             return { icon: "package", title: "Updates", on: Updates.count > 0, accent: Updates.important ? Theme.rose : Theme.accent,
                      page: "updates",
@@ -734,7 +740,8 @@ Scope {
                       : root.page === "bluetooth" ? "BluetoothPage.qml"
                       : root.page === "sound" ? "SoundPage.qml"
                       : root.page === "idle" ? "IdlePage.qml"
-                      : root.page === "updates" ? "UpdatesPanel.qml" : ""
+                      : root.page === "updates" ? "UpdatesPanel.qml"
+                      : root.page === "drives" ? "DrivesPanel.qml" : ""
                 Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.InOutCubic } }
                 onLoaded: {
                     item.showBack = true

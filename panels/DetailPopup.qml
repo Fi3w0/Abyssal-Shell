@@ -111,7 +111,7 @@ Scope {
                 source: ({
                     wifi: "WifiPage.qml", bluetooth: "BluetoothPage.qml", sound: "SoundPage.qml",
                     calendar: "CalendarView.qml", notifications: "NotificationList.qml", clock: "ClockCenter.qml",
-                    clipboard: "ClipboardPanel.qml", updates: "UpdatesPanel.qml"
+                    clipboard: "ClipboardPanel.qml", updates: "UpdatesPanel.qml", drives: "DrivesPanel.qml"
                 })[win.page] || ""
                 onLoaded: item.active = Qt.binding(() => root.open)
             }
