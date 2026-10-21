@@ -26,7 +26,7 @@ Scope {
     readonly property bool open: qs !== null && screen && qs.output === screen.name
     // Edge of the panel it last opened from, kept while it animates out.
     property string lastEdge: "top"
-    onQsChanged: if (open) lastEdge = qs.edge
+    onQsChanged: if (qs && open) lastEdge = qs.edge
     readonly property string edge: lastEdge
     // The window stays up until the closing animation is done; the page and
     // edit mode reset only then, so closing doesn't jump back first.

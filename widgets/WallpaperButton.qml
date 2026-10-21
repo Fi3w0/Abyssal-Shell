@@ -2,13 +2,13 @@ import QtQuick
 import "../components"
 import "../services"
 
-// Opens the wallpaper picker (on every monitor, picking for this one first).
+// Opens the wallpaper picker on this panel's monitor.
 BarButton {
     id: root
     property var ctx
 
     iconSize: ctx && ctx.options ? (ctx.options.iconSize ?? 17) : 17
     icon: "image"
-    active: Shell.wallpaperOn !== ""
+    active: Shell.wallpaperOn !== "" && Shell.wallpaperOn === (ctx ? ctx.output : "")
     onClicked: Shell.toggleWallpaperPicker(ctx.output)
 }

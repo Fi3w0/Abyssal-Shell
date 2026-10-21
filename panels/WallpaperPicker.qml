@@ -7,9 +7,10 @@ import Quickshell.Widgets
 import "../components"
 import "../services"
 
-// Wallpaper picker: a looping depth carousel, open on every monitor at once.
-// The monitor under the pointer is the one you pick for: it has the
-// keyboard, the others dim until the pointer moves onto them. The selected card faces you (videos
+// Wallpaper picker: a looping depth carousel on one monitor, and only that
+// monitor changes. It opens where you are working; moving the pointer onto
+// another monitor moves it there (an invisible layer on the other monitors
+// notices the pointer, which TideWM doesn't report otherwise). The selected card faces you (videos
 // play in it), the others turn away and sink; behind it all, the selected
 // wallpaper, blurred.
 //   ← → / A D   move; hold to spin faster, let go and it coasts to a stop
@@ -21,9 +22,7 @@ PanelWindow {
     id: root
 
     required property string output
-    readonly property bool open: Shell.wallpaperOn !== ""
-    // This monitor is the one being picked for (the pointer is here).
-    readonly property bool active: Shell.wallpaperOn === output
+    readonly property bool open: Shell.wallpaperOn === output
     property bool shown: false
     onOpenChanged: {
         if (open) {
@@ -37,7 +36,7 @@ PanelWindow {
 
     WlrLayershell.namespace: "abyssal-wallpaper"
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: open && active ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     anchors { top: true; bottom: true; left: true; right: true }
     exclusiveZone: -1
     color: "transparent"
@@ -207,11 +206,6 @@ PanelWindow {
         onTChanged: if (t === 0 && !root.open) root.shown = false
         opacity: t
 
-        // The pointer arriving makes this monitor the one being picked for.
-        HoverHandler {
-            onHoveredChanged: if (hovered && root.open) Shell.wallpaperOn = root.output
-        }
-
         Keys.onPressed: e => {
             if (root.searching) {
                 if (e.key === Qt.Key_Escape) { root.searching = false; stage.forceActiveFocus(); e.accepted = true }
@@ -236,7 +230,6 @@ PanelWindow {
         Connections {
             target: root
             function onOpenChanged() { if (root.open) stage.forceActiveFocus() }
-            function onActiveChanged() { if (root.active) stage.forceActiveFocus() }
         }
 
         // Behind everything: the selected wallpaper, blurred and sunk.
@@ -279,7 +272,7 @@ PanelWindow {
             spacing: 6
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: root.active ? "WALLPAPER · " + root.output : root.output + " · MOVE THE POINTER HERE"
+                text: "WALLPAPER · " + root.output
                 color: root.cCyan
                 font { family: Theme.font; pixelSize: 11; bold: true; letterSpacing: 1.6 }
             }
@@ -314,8 +307,6 @@ PanelWindow {
             y: Math.round(parent.height * 0.47 - root.cardH / 2 + (1 - stage.t) * 40)
             width: root.cardW
             height: root.cardH
-            opacity: root.active ? 1 : 0.5
-            Behavior on opacity { NumberAnimation { duration: 200 } }
 
             // Glow under the selected card.
             RectangularShadow {
@@ -569,6 +560,23 @@ PanelWindow {
                 color: Theme.alpha(root.cSub, 0.75)
                 font { family: Theme.font; pixelSize: 11 }
             }
+        }
+    }
+
+    // While the picker is open on another monitor: an invisible layer here
+    // that moves it here when the pointer arrives (or clicks).
+    PanelWindow {
+        screen: root.screen
+        visible: Shell.wallpaperOn !== "" && !root.open
+        WlrLayershell.namespace: "abyssal-wallpaper-follow"
+        WlrLayershell.layer: WlrLayer.Overlay
+        anchors { top: true; bottom: true; left: true; right: true }
+        exclusiveZone: -1
+        color: "transparent"
+        Item {
+            anchors.fill: parent
+            HoverHandler { onHoveredChanged: if (hovered && Shell.wallpaperOn !== "") Shell.wallpaperOn = root.output }
+            TapHandler { onTapped: if (Shell.wallpaperOn !== "") Shell.wallpaperOn = root.output }
         }
     }
 
