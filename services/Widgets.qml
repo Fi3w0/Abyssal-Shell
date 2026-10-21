@@ -110,6 +110,9 @@ Singleton {
             extra = [choice("always", "Display", [[false, "While recording"], [true, "Always"]], false)]
         } else if (["power", "quick-settings", "bluetooth", "notifications", "clipboard", "wallpaper"].includes(id)) {
             extra = [numeric("iconSize", "Icon size", 14, 26, 17, "px")]
+        } else if (id === "ai-usage") {
+            extra = [choice("show", "Tools", [["both", "Claude Code + Codex"], ["claude", "Claude Code"], ["codex", "Codex"]], "both"),
+                toggle("weekly", "Weekly line", true)]
         } else if (id === "drives") {
             extra = [numeric("iconSize", "Icon size", 14, 26, 17, "px"), choice("whenNone", "With no drives", [["hide", "Hide"], ["show", "Show"]], "hide")]
         } else if (id === "updates") {
