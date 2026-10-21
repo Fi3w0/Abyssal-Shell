@@ -42,8 +42,9 @@ building it. The installer and the settings app are tracked separately.
 - [ ] **Night light.** TideWM has `wlr-gamma-control`, but the real colour
       change is unverified on hardware; test it before building a tile and
       a schedule.
-- [ ] **Notifications.** Images (screenshots, covers), history that
-      survives a shell restart, action buttons on the toasts.
+- [x] **Notifications.** Pictures apps attach (toast and centre), up to three
+      action buttons on toasts, clickable toasts, history saved for a week
+      and restored after a restart or reload (without duplicates).
 - [ ] **Launcher modes.** A few, not many: candidates are running a shell
       command and actions like lock or reboot from the search field.
 - [ ] **Matching app themes in TideWM.** GTK and Qt apps follow the Abyssal

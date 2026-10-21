@@ -223,6 +223,16 @@ ColumnLayout {
                     font { family: Theme.font; pixelSize: 11 }
                     Layout.fillWidth: true
                 }
+                Image {
+                    visible: (card.modelData.image || "") !== "" && status === Image.Ready
+                    Layout.fillWidth: true
+                    Layout.topMargin: 4
+                    Layout.preferredHeight: visible ? Math.min(120, width * implicitHeight / Math.max(1, implicitWidth)) : 0
+                    source: card.modelData.image || ""
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    sourceSize.width: 500
+                }
                 Flow {
                     visible: card.modelData.actions.length > 0
                     spacing: 6

@@ -54,7 +54,8 @@ PanelWindow {
                     return
                 }
             }
-            toastModel.append({ tid: item.nid, app: item.app, title: item.title, body: item.body, icon: item.icon, closing: false, repeats: 1, clickable: item.hasDefault })
+            toastModel.append({ tid: item.nid, app: item.app, title: item.title, body: item.body, icon: item.icon, closing: false, repeats: 1, clickable: item.hasDefault,
+                                image: item.image || "", actions: JSON.stringify((item.actions || []).slice(0, 3)) })
             while (toastModel.count > Notifications.maxToasts) toastModel.remove(0)
         }
     }
@@ -183,6 +184,39 @@ PanelWindow {
                             maximumLineCount: 2
                             elide: Text.ElideRight
                             Layout.fillWidth: true
+                        }
+                        // The app's picture (a screenshot, cover art).
+                        ClippingRectangle {
+                            visible: toast.model.image !== "" && pic.status === Image.Ready
+                            Layout.fillWidth: true
+                            Layout.topMargin: 6
+                            Layout.preferredHeight: visible ? Math.min(150, width * pic.implicitHeight / Math.max(1, pic.implicitWidth)) : 0
+                            radius: 10
+                            color: "transparent"
+                            Image {
+                                id: pic
+                                anchors.fill: parent
+                                source: toast.model.image
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                sourceSize.width: 600
+                            }
+                        }
+                        // Up to three of the app's buttons (Reply, Open…).
+                        Flow {
+                            readonly property var acts: { try { return JSON.parse(toast.model.actions || "[]") } catch (e) { return [] } }
+                            visible: acts.length > 0
+                            Layout.fillWidth: true
+                            Layout.topMargin: 6
+                            spacing: 6
+                            Repeater {
+                                model: parent.acts
+                                TextButton {
+                                    required property var modelData
+                                    text: modelData.text
+                                    onClicked: { Notifications.invoke(toast.model.tid, modelData.id); root.close(toast.model.tid) }
+                                }
+                            }
                         }
                     }
 

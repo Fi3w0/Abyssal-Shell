@@ -37,10 +37,16 @@ Singleton {
             time: Qt.formatDateTime(new Date(), "hh:mm"),
             notification: n,
             onClick: onClick || null,
+            // A picture the app attached (screenshot, cover art), and the
+            // server's id for the notification (survives a shell reload).
+            image: n && n.image ? String(n.image) : "",
+            id: n ? n.id : 0,
             hasDefault: n ? n.actions.some(a => a.identifier === "default") : typeof onClick === "function",
             actions: n ? n.actions.filter(a => a.identifier !== "default").map(a => ({ id: a.identifier, text: a.text })) : []
         }
-        const next = history.slice()
+        // Back after a shell reload: take the place of the copy restored
+        // from disk instead of showing it twice.
+        const next = history.filter(i => !(i.restored && n && i.id === n.id && i.title === item.title))
         next.unshift(item)
         while (next.length > 50) drop(next.pop().nid, true)
         history = next
@@ -87,12 +93,45 @@ Singleton {
     NotificationServer {
         keepOnReload: true
         bodySupported: true
-        imageSupported: false
+        imageSupported: true
         actionsSupported: true
         onNotification: n => {
             n.tracked = true
             root.push(n.appName, n.summary, n.body, n.appIcon, n, n.lastGeneration)
         }
+    }
+
+    // ── Kept across restarts ────────────────────────────────────────────
+    // The history is saved (text, app, icon, file images; not the live
+    // notification, so restored ones have no buttons) and comes back marked
+    // read. Notifications older than a week are not kept.
+    onHistoryChanged: saveTimer.restart()
+    Timer {
+        id: saveTimer
+        interval: 1000
+        onTriggered: {
+            const keep = root.history.filter(i => Date.now() - i.ts < 7 * 86400000).slice(0, 50).map(i => ({
+                id: i.id, app: i.app, title: i.title, body: i.body, icon: i.icon, ts: i.ts, time: i.time,
+                image: /^(\/|file:)/.test(i.image) ? i.image : ""
+            }))
+            saved.setText(JSON.stringify(keep))
+        }
+    }
+    FileView {
+        id: saved
+        path: Quickshell.statePath("notifications.json")
+        printErrors: false
+        blockLoading: true
+    }
+    Component.onCompleted: {
+        let list = []
+        try { list = JSON.parse(saved.text() || "[]") } catch (e) {}
+        if (!Array.isArray(list)) return
+        const restored = list.filter(i => i && Date.now() - i.ts < 7 * 86400000).map(i => Object.assign({
+            nid: i.ts + Math.random(), notification: null, onClick: null, hasDefault: false, actions: [], restored: true
+        }, i))
+        // Live ones the server handed back already sit in front.
+        root.history = root.history.concat(restored.filter(r => !root.history.some(h => h.id === r.id && r.id && h.title === r.title)))
     }
 
     // qs -c abyssal ipc call notify send "App" "Title" "Body"
