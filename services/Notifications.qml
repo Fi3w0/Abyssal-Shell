@@ -16,11 +16,40 @@ Singleton {
     property bool dnd: false
     property int  toastDuration: 4200
     property int  maxToasts: 5
+    property var configuredDnd: undefined
+    FileView {
+        path: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/abyssal/notifications.json"
+        blockLoading: true; watchChanges: true; printErrors: false
+        onFileChanged: reload()
+        Component.onCompleted: text()
+        onLoaded: {
+            try {
+                const c = JSON.parse(text())
+                if (typeof c.toastDuration === "number") root.toastDuration = Math.round(Math.max(1000, Math.min(30000, c.toastDuration)))
+                if (typeof c.maxToasts === "number") root.maxToasts = Math.round(Math.max(1, Math.min(10, c.maxToasts)))
+                if (typeof c.dnd === "boolean" && root.configuredDnd !== c.dnd) root.dnd = c.dnd
+                root.configuredDnd = c.dnd
+            } catch (e) {}
+        }
+    }
     property var  history: []
     // Arrived since the centre was last opened.
     property int  unread: 0
 
     signal toast(var item)
+
+    // Keep attached files out of the icon-theme provider: it can return
+    // a tiny icon pixmap when a large screenshot preview is requested.
+    function imageFor(n) {
+        if (!n) return ""
+        const hints = n.hints || {}
+        const path = hints["image-path"] || hints.image_path || ""
+        if (typeof path === "string") {
+            if (path.startsWith("file:")) return path
+            if (path.startsWith("/")) return "file://" + path.split("/").map(encodeURIComponent).join("/")
+        }
+        return n.image ? String(n.image) : ""
+    }
 
     // `quiet`: into the history only, no toast and no unread dot (the ones
     // the server hands back after a shell reload, like Plasma does).
@@ -39,7 +68,7 @@ Singleton {
             onClick: onClick || null,
             // A picture the app attached (screenshot, cover art), and the
             // server's id for the notification (survives a shell reload).
-            image: n && n.image ? String(n.image) : "",
+            image: imageFor(n),
             id: n ? n.id : 0,
             hasDefault: n ? n.actions.some(a => a.identifier === "default") : typeof onClick === "function",
             actions: n ? n.actions.filter(a => a.identifier !== "default").map(a => ({ id: a.identifier, text: a.text })) : []

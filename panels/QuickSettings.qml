@@ -608,7 +608,7 @@ Scope {
                                         border.width: 1
                                         border.color: avatarArea.containsMouse ? Theme.alpha(Theme.cyan, 0.6) : Theme.alpha(Theme.text, 0.12)
                                         id: avatar
-                                        readonly property string spec: cell.it.icon || "builtin:logo"
+                                        readonly property string spec: Profile.avatar ? "file:" + Profile.avatar : cell.it.icon || "builtin:logo"
                                         readonly property bool image: spec.startsWith("file:")
                                         // An imported image fills the circle, cropped to fit.
                                         ClippingRectangle {
@@ -659,7 +659,7 @@ Scope {
                                             acceptedButtons: Qt.LeftButton | Qt.RightButton
                                             cursorShape: Qt.PointingHandCursor
                                             onClicked: mouse => {
-                                                if (mouse.button === Qt.RightButton) PanelLayout.setQuickMenuField("header", "icon", "")
+                                                if (mouse.button === Qt.RightButton) {Profile.setAvatar(""); PanelLayout.setQuickMenuField("header", "icon", "")}
                                                 else Shell.pickHeaderIcon()
                                             }
                                         }
@@ -668,7 +668,7 @@ Scope {
                                         spacing: 0
                                         Layout.fillWidth: true
                                         Text {
-                                            text: Quickshell.env("USER")
+                                            text: Profile.displayName
                                             color: Theme.text
                                             font { family: Theme.font; pixelSize: 13; weight: Font.Medium }
                                         }
@@ -681,6 +681,7 @@ Scope {
                                     }
                                     BarButton { implicitWidth: 30; implicitHeight: 30; icon: "lock"; iconSize: 14; onClicked: Shell.lock() }
                                     BarButton { implicitWidth: 30; implicitHeight: 30; icon: "sliders"; iconSize: 14; active: root.editing; onClicked: root.editing = !root.editing }
+                                    BarButton { implicitWidth: 30; implicitHeight: 30; icon: "settings"; iconSize: 14; onClicked: Shell.settings() }
                                     BarButton { implicitWidth: 30; implicitHeight: 30; icon: "power"; iconSize: 14; iconColor: Theme.danger; onClicked: Shell.togglePower(root.screen.name) }
                                 }
                             }

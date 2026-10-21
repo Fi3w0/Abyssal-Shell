@@ -78,6 +78,7 @@ PanelWindow {
 
     // ── Shell actions, found by name ────────────────────────────────────
     readonly property var actions: [
+        { title: "Abyssal Settings", icon: "settings", words: "settings preferences config theme keybinds autostart account", detail: "Configure the desktop", run: () => Shell.settings() },
         { title: "Lock", icon: "lock", words: "lock screen", run: () => Shell.lock() },
         { title: "Log out", icon: "logout", words: "logout log out exit quit session tidewm", run: () => Quickshell.execDetached(["tidectl", "quit"]) },
         { title: "Sleep", icon: "sleep", words: "sleep suspend", run: () => Quickshell.execDetached(["systemctl", "suspend"]) },

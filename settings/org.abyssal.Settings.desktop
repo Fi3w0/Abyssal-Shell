@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Abyssal Settings
+Comment=Configure the Abyssal desktop and TideWM
+Exec=abyssal-settings
+Icon=org.abyssal.Settings
+Categories=Settings;DesktopSettings;
+StartupWMClass=org.abyssal.Settings
+Terminal=false

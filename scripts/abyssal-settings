@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+# The native Qt app is built separately; this launcher never builds on login.
+set -eu
+abyssal_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+export PATH="$HOME/.local/bin:$PATH"
+if command -v abyssal-settings >/dev/null 2>&1; then
+    exec abyssal-settings --shell-root "$abyssal_root" "$@"
+fi
+printf '%s\n' 'Build/install the settings app first; see settings/README.md.' >&2
+exit 1

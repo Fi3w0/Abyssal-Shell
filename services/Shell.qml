@@ -250,12 +250,21 @@ Singleton {
         quickSettings = null
         headerIconDialog.open()
     }
+    function settings() {
+        quickSettings = null
+        detail = null
+        launcherOn = ""
+        Quickshell.execDetached([Quickshell.shellPath("scripts/abyssal-settings")])
+    }
     FileDialog {
         id: headerIconDialog
         title: "Quick menu icon"
         nameFilters: ["Images (*.svg *.png *.jpg *.jpeg *.webp *.gif *.bmp *.ico)", "All files (*)"]
-        onAccepted: PanelLayout.setQuickMenuField("header", "icon",
-            "file:" + decodeURIComponent(selectedFile.toString().replace(/^file:\/\//, "")))
+        onAccepted: {
+            const path = decodeURIComponent(selectedFile.toString().replace(/^file:\/\//, ""))
+            Profile.setAvatar(path)
+            PanelLayout.setQuickMenuField("header", "icon", "file:" + path)
+        }
     }
 
     // qs -c abyssal ipc call power toggle
@@ -275,6 +284,7 @@ Singleton {
         function lock(): void { root.lock() }
         function launcher(): void { root.toggleLauncher(root.targetOutput()) }
         function wallpapers(): void { root.toggleWallpaperPicker(root.targetOutput()) }
+        function settings(): void { root.settings() }
         // Alt+Tab: opens the switcher, or moves to the next window in it.
         function switcher(): void {
             if (root.switcherOn !== "") root.switcherStep(1)
