@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Shapes
 import Quickshell
+import Quickshell.Io
 
 // One monitor's lock screen: deep-sea backdrop with drifting glows, the
 // time, and a password field. Self-contained (own palette copy) so the lock
@@ -11,16 +12,27 @@ Item {
 
     required property var lockRoot
 
-    // Abyssal Tide (see services/Theme.qml)
-    readonly property color crust:   "#080b17"
-    readonly property color base:    "#0c1020"
-    readonly property color surface: "#161b2e"
-    readonly property color overlay: "#525c7e"
-    readonly property color subtext: "#9aa3c4"
-    readonly property color text:    "#dde3f6"
-    readonly property color accent:  "#a98bff"
-    readonly property color cyan:    "#7fd6e6"
-    readonly property color danger:  "#ff7a95"
+    // The main shell's active theme (services/Themes.qml writes it), read
+    // once; Abyssal Tide when it is missing or broken.
+    readonly property var theme: {
+        try { return JSON.parse(themeFile.text()).colors || {} } catch (e) { return {} }
+    }
+    FileView {
+        id: themeFile
+        path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/abyssal/theme.json"
+        blockLoading: true
+        printErrors: false
+    }
+    readonly property color crust:   theme.crust || "#080b17"
+    readonly property color base:    theme.base || "#0c1020"
+    readonly property color surface: theme.surface0 || "#161b2e"
+    readonly property color overlay: theme.overlay || "#525c7e"
+    readonly property color subtext: theme.subtext || "#9aa3c4"
+    readonly property color text:    theme.text || "#dde3f6"
+    readonly property color accent:  theme.accent || "#a98bff"
+    readonly property color cyan:    theme.cyan || "#7fd6e6"
+    readonly property color rose:    theme.rose || "#f28fb0"
+    readonly property color danger:  theme.danger || "#ff7a95"
     readonly property string font:   "JetBrains Mono"
 
     SystemClock { id: clock; precision: SystemClock.Minutes }
@@ -31,7 +43,7 @@ Item {
         model: [
             { c: root.accent, s: 1.1, x: 0.22, y: 0.30, d: 23000 },
             { c: root.cyan,   s: 0.9, x: 0.80, y: 0.66, d: 29000 },
-            { c: "#f28fb0",   s: 0.6, x: 0.58, y: 0.16, d: 31000 }
+            { c: root.rose,   s: 0.6, x: 0.58, y: 0.16, d: 31000 }
         ]
         delegate: Shape {
             id: glow

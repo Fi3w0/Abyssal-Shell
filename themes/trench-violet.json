@@ -1,0 +1,15 @@
+{
+  "name": "Trench / Violet",
+  "shape": "square",
+  "mono": false,
+  "glass": 0.94,
+  "glassStrong": 0.98,
+  "radius": { "popup": 12, "control": 8 },
+  "colors": {
+    "crust": "#0e0917", "base": "#1b1328", "surface0": "#291c3b", "surface1": "#342447",
+    "overlay": "#a18bb5", "subtext": "#c3b2d2", "text": "#f1eaf7",
+    "accent": "#c5a5ef", "cyan": "#94dbd7", "rose": "#eea2c5",
+    "warn": "#f5c27a", "danger": "#ff7a95", "success": "#8be0b0",
+    "hairline": "#574067", "hover": "#3a2950", "accentSoft": "#46305f", "chip": "#120d1c", "controlEdge": "#604678"
+  }
+}

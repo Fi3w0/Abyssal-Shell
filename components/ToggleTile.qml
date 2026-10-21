@@ -18,10 +18,10 @@ Rectangle {
 
     implicitHeight: 60
     radius: Theme.controlRadius
-    color: Theme.trench ? (on ? Theme.accentSoft : area.containsMouse ? Theme.hover : Theme.surface0)
+    color: Theme.square ? (on ? Theme.accentSoft : area.containsMouse ? Theme.hover : Theme.surface0)
                        : on ? Theme.alpha(onColor, 0.85) : area.containsMouse ? Theme.alpha(Theme.surface1, 0.95) : Theme.alpha(Theme.surface0, 0.9)
     border.width: 1
-    border.color: Theme.trench ? (on ? Theme.alpha(onColor, 0.55) : Theme.hairline) : on ? "transparent" : Theme.hairline
+    border.color: Theme.square ? (on ? Theme.alpha(onColor, 0.55) : Theme.hairline) : on ? "transparent" : Theme.hairline
     opacity: enabled ? 1 : 0.4
     Behavior on color { ColorAnimation { duration: Theme.anim } }
 
@@ -38,7 +38,7 @@ Rectangle {
                 anchors.centerIn: parent
                 name: root.icon
                 size: 16
-                color: root.on ? (Theme.trench ? root.onColor : Theme.crust) : Theme.subtext
+                color: root.on ? (Theme.square ? root.onColor : Theme.crust) : Theme.subtext
             }
         }
 
@@ -47,14 +47,14 @@ Rectangle {
             Layout.fillWidth: true
             Text {
                 text: root.title
-                color: root.on && !Theme.trench ? Theme.crust : Theme.text
+                color: root.on && !Theme.square ? Theme.crust : Theme.text
                 font { family: Theme.font; pixelSize: 12; bold: true }
                 elide: Text.ElideRight
                 Layout.fillWidth: true
             }
             Text {
                 text: root.detail
-                color: Theme.trench ? Theme.subtext : root.on ? Theme.alpha(Theme.crust, 0.75) : Theme.overlay
+                color: Theme.square ? Theme.subtext : root.on ? Theme.alpha(Theme.crust, 0.75) : Theme.overlay
                 font { family: Theme.font; pixelSize: 10 }
                 elide: Text.ElideRight
                 Layout.fillWidth: true
@@ -78,13 +78,13 @@ Rectangle {
             anchors { left: parent.left; verticalCenter: parent.verticalCenter }
             width: 1
             height: parent.height - 24
-            color: root.on && !Theme.trench ? Theme.alpha(Theme.crust, 0.25) : Theme.hairline
+            color: root.on && !Theme.square ? Theme.alpha(Theme.crust, 0.25) : Theme.hairline
         }
         Icon {
             anchors.centerIn: parent
             name: "chevron-right"
             size: 13
-            color: root.on && !Theme.trench ? Theme.crust : Theme.subtext
+            color: root.on && !Theme.square ? Theme.crust : Theme.subtext
         }
         MouseArea {
             anchors.fill: parent

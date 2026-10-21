@@ -132,9 +132,9 @@ PanelWindow {
                     OptionPicker {
                         Layout.fillWidth: true
                         enabled: Appearance.writable
-                        options: [{ value: "trench-violet", label: "Trench / Violet" }, { value: "abyssal-tide", label: "Abyssal Tide" }]
-                        selectedValue: Appearance.preset
-                        onPicked: v => Appearance.set("preset", v)
+                        options: Themes.ids.map(id => ({ value: id, label: Themes.name(id) }))
+                        selectedValue: Appearance.theme
+                        onPicked: v => Appearance.set("theme", v)
                     }
 
                     Label { text: "Labels" }

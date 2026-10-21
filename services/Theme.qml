@@ -3,43 +3,47 @@ pragma Singleton
 import QtQuick
 import Quickshell
 
-// Shared roles for Trench / Violet and the original Abyssal Tide palette.
+// Colour and shape roles, from the active theme (services/Themes.qml).
 Singleton {
     id: root
 
-    // ── Neutrals (navy slate pulled from the wallpapers) ────────────────
-    readonly property bool trench: Appearance.preset === "trench-violet"
-    readonly property color crust:    trench ? "#0e0917" : "#080b17"
-    readonly property color base:     trench ? "#1b1328" : "#0c1020"
-    readonly property color surface0: trench ? "#291c3b" : "#161b2e"
-    readonly property color surface1: trench ? "#342447" : "#212841"
-    readonly property color overlay:  trench ? "#a18bb5" : "#525c7e"
-    readonly property color subtext:  trench ? "#c3b2d2" : "#9aa3c4"
-    readonly property color text:     trench ? "#f1eaf7" : "#dde3f6"
+    readonly property var t: Themes.active
+    readonly property var c: t.colors
+    // Square, solid controls (Trench / Violet) instead of glass pills.
+    readonly property bool square: t.square
+
+    // ── Neutrals ────────────────────────────────────────────────────────
+    readonly property color crust:    c.crust
+    readonly property color base:     c.base
+    readonly property color surface0: c.surface0
+    readonly property color surface1: c.surface1
+    readonly property color overlay:  c.overlay
+    readonly property color subtext:  c.subtext
+    readonly property color text:     c.text
 
     // ── Accents ─────────────────────────────────────────────────────────
-    // violet: primary (active, selected, sliders, focus)
+    // accent: primary (active, selected, sliders, focus)
     // cyan:   connectivity, info, the logo
     // rose:   badges, highlights, live indicators
-    readonly property color accent:  trench ? "#c5a5ef" : "#a98bff"
-    readonly property color cyan:    trench ? "#94dbd7" : "#7fd6e6"
-    readonly property color rose:    trench ? "#eea2c5" : "#f28fb0"
-    readonly property color warn:    "#f5c27a"
-    readonly property color danger:  "#ff7a95"
-    readonly property color success: "#8be0b0"
+    readonly property color accent:  c.accent
+    readonly property color cyan:    c.cyan
+    readonly property color rose:    c.rose
+    readonly property color warn:    c.warn
+    readonly property color danger:  c.danger
+    readonly property color success: c.success
 
     // ── Glass ───────────────────────────────────────────────────────────
     // Island fill; TideWM's layer_rule blur frosts what is behind it.
-    readonly property real  glassOpacity: trench ? 0.94 : 0.72
+    readonly property real  glassOpacity: t.glass
     readonly property color glass:        alpha(base, glassOpacity)
-    readonly property color glassStrong:  alpha(base, trench ? 0.98 : 0.88)
-    readonly property color hairline:     trench ? "#574067" : alpha(text, 0.08)
-    readonly property color hover:        trench ? "#3a2950" : alpha(text, 0.07)
-    readonly property color accentSoft:   trench ? "#46305f" : alpha(accent, 0.16)
-    readonly property color chip:         trench ? "#120d1c" : alpha(crust, 0.5)
-    readonly property color controlEdge:  trench ? "#604678" : hairline
-    readonly property int popupRadius: trench ? 12 : 22
-    readonly property int controlRadius: trench ? 8 : 16
+    readonly property color glassStrong:  alpha(base, t.glassStrong)
+    readonly property color hairline:     c.hairline
+    readonly property color hover:        c.hover
+    readonly property color accentSoft:   c.accentSoft
+    readonly property color chip:         c.chip
+    readonly property color controlEdge:  c.controlEdge
+    readonly property int popupRadius: t.popupRadius
+    readonly property int controlRadius: t.controlRadius
 
     // ── Type ────────────────────────────────────────────────────────────
     readonly property var availableFonts: Qt.fontFamilies()

@@ -11,16 +11,22 @@ Singleton {
     readonly property string path: dir + "/appearance.json"
     property var data: ({})
     property bool writable: false
-    readonly property string preset: data.preset === "abyssal-tide" ? "abyssal-tide" : "trench-violet"
-    readonly property bool mono: data.mono !== undefined ? data.mono === true : preset === "abyssal-tide"
+    // Theme id (services/Themes.qml); "preset" is the old name of the key.
+    readonly property string theme: typeof data.theme === "string" ? data.theme
+        : typeof data.preset === "string" ? data.preset : "trench-violet"
+    // The wallpaper picker's W toggle: wear the theme made from the
+    // wallpaper instead of `theme`.
+    readonly property bool fromWallpaper: data.fromWallpaper === true
+    readonly property bool mono: data.mono !== undefined ? data.mono === true : Themes.active.mono
 
     function set(key, value) {
         if (!writable) return
-        if (key !== "preset" && key !== "mono") return
-        if (key === "preset" && value !== "trench-violet" && value !== "abyssal-tide") return
-        if (key === "mono" && typeof value !== "boolean") return
+        if (key !== "theme" && key !== "mono" && key !== "fromWallpaper") return
+        if (key === "theme" && (typeof value !== "string" || !Themes.themes[value])) return
+        if ((key === "mono" || key === "fromWallpaper") && typeof value !== "boolean") return
         const next = Object.assign({}, data)
         next[key] = value
+        if (key === "theme") delete next.preset
         data = next
         if (!directory.running) directory.running = true
     }

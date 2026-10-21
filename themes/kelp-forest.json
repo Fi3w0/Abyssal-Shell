@@ -1,0 +1,14 @@
+{
+  "name": "Kelp Forest",
+  "shape": "pill",
+  "mono": false,
+  "glass": 0.74,
+  "glassStrong": 0.9,
+  "radius": { "popup": 20, "control": 14 },
+  "colors": {
+    "crust": "#06110f", "base": "#0a1916", "surface0": "#12261f", "surface1": "#1b342b",
+    "overlay": "#4f7466", "subtext": "#9cc2b2", "text": "#ddf2e8",
+    "accent": "#6fe0b4", "cyan": "#7fd6e6", "rose": "#f2b38f",
+    "warn": "#f5c27a", "danger": "#ff7a95", "success": "#8be0b0"
+  }
+}

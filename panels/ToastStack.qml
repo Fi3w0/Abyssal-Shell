@@ -65,7 +65,7 @@ PanelWindow {
 
                 width: col.width
                 height: row.implicitHeight + 24
-                radius: Theme.trench ? Theme.popupRadius : 16
+                radius: Theme.square ? Theme.popupRadius : 16
                 color: Theme.glassStrong
                 border.width: 1
                 border.color: Theme.hairline

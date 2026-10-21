@@ -1,0 +1,14 @@
+{
+  "name": "Ember Vent",
+  "shape": "pill",
+  "mono": false,
+  "glass": 0.76,
+  "glassStrong": 0.9,
+  "radius": { "popup": 20, "control": 14 },
+  "colors": {
+    "crust": "#120a0a", "base": "#1a0f0f", "surface0": "#2a1916", "surface1": "#36211c",
+    "overlay": "#80625a", "subtext": "#d1b3a8", "text": "#f6e7e1",
+    "accent": "#ff9e6b", "cyan": "#f5c27a", "rose": "#ff7a95",
+    "warn": "#f5c27a", "danger": "#ff6b6b", "success": "#a8d98b"
+  }
+}

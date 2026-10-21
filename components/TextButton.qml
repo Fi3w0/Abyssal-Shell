@@ -19,7 +19,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: Theme.trench ? Theme.controlRadius : height / 2
+        radius: Theme.square ? Theme.controlRadius : height / 2
         color: root.accent ? (area.containsMouse ? Qt.lighter(Theme.accent, 1.08) : Theme.accent)
              : area.containsMouse ? Theme.alpha(root.danger ? Theme.danger : Theme.text, 0.12)
              : Theme.alpha(Theme.surface1, 0.8)

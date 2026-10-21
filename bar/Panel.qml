@@ -31,7 +31,7 @@ PanelWindow {
     readonly property real along: vertical ? height : width
     // Content sits on the screen-edge side, `gap` away from it.
     readonly property real crossStart: (edge === "top" || edge === "left") ? gap : 0
-    readonly property real radius: config.floating || islands ? Math.min(thickness / 2, Theme.trench ? 10 : 18) : 0
+    readonly property real radius: config.floating || islands ? Math.min(thickness / 2, Theme.square ? 10 : 18) : 0
     readonly property bool editing: Shell.editing
     readonly property bool selected: Shell.isEditTarget(output, edge)
 

@@ -15,7 +15,7 @@ Rectangle {
     implicitHeight: Theme.controlHeight
     implicitWidth: (uniform ? widest * options.length
         : options.reduce((w, o) => w + metrics.advanceWidth(o.label) + 22, 0)) + Math.max(0, options.length - 1) * 2 + 6
-    radius: Theme.trench ? Theme.controlRadius : height / 2
+    radius: Theme.square ? Theme.controlRadius : height / 2
     color: Theme.alpha(Theme.crust, 0.6)
     border.width: 1
     border.color: Theme.hairline
@@ -35,7 +35,7 @@ Rectangle {
 
                 width: root.uniform ? (root.width - 6 - Math.max(0, root.options.length - 1) * 2) / Math.max(1, root.options.length) : metrics.advanceWidth(modelData.label) + 22
                 height: Theme.controlHeight - 6
-                radius: Theme.trench ? 6 : height / 2
+                radius: Theme.square ? 6 : height / 2
                 color: on ? Theme.accentSoft : area.containsMouse && usable ? Theme.hover : "transparent"
                 border.width: on ? 1 : 0
                 border.color: Theme.alpha(Theme.accent, 0.5)

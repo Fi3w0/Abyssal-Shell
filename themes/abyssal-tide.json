@@ -1,0 +1,18 @@
+{
+  "name": "Abyssal Tide",
+  "shape": "pill",
+  "mono": true,
+  "glass": 0.72,
+  "glassStrong": 0.88,
+  "radius": { "popup": 22, "control": 16 },
+  "colors": {
+    "crust": "#080b17", "base": "#0c1020", "surface0": "#161b2e", "surface1": "#212841",
+    "overlay": "#525c7e", "subtext": "#9aa3c4", "text": "#dde3f6",
+    "accent": "#a98bff", "cyan": "#7fd6e6", "rose": "#f28fb0",
+    "warn": "#f5c27a", "danger": "#ff7a95", "success": "#8be0b0"
+  },
+  "tidewm": {
+    "border": ["#a98bffff", "#7fd6e6ff"], "inactive": ["#3a3160b0", "#161b2eb0"], "urgent": ["#f28fb0ff", "#ff7a95ff"],
+    "shadow": "#2a1f5cb0", "shadowInactive": "#04060f70", "shadowUrgent": "#f28fb080"
+  }
+}
