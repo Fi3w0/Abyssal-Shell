@@ -156,7 +156,9 @@ Singleton {
         recProc.running = true
     }
 
-    Timer { interval: 3000; running: true; repeat: true; triggeredOnStart: true; onTriggered: root.refreshFast() }
+    // 5 s, not 3: each tick is three short-lived processes (awk, awk and a
+    // shell loop over /sys/class/hwmon); 3 s was a flat 1 spawn/s forever.
+    Timer { interval: 5000; running: true; repeat: true; triggeredOnStart: true; onTriggered: root.refreshFast() }
     Timer {
         interval: 10000; running: true; repeat: true; triggeredOnStart: true
         onTriggered: { netProc.running = true; recProc.running = true; radioProc.running = true; idleProc.running = true }

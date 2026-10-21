@@ -33,8 +33,10 @@ Singleton {
         }
         onExited: code => { if (code !== 0) root.samples = [] }
     }
+    // 10 s, not 3: each tick spawns python3, which itself runs nvidia-smi
+    // and lspci. GPU utilisation on a bar does not need 3 s resolution.
     Timer {
-        interval: 3000; running: true; repeat: true; triggeredOnStart: true
+        interval: 10000; running: true; repeat: true; triggeredOnStart: true
         onTriggered: if (!probe.running) probe.running = true
     }
 }
