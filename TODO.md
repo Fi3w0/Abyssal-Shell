@@ -33,6 +33,55 @@ New issues join this queue; finish the whole queue before stopping.
 Decided with Fiw on 2026-10-21. Discuss the design of each item before
 building it. The installer and the settings app are tracked separately.
 
+## Roadmap — layer by layer (2026-10-22)
+
+Build one layer at a time; discuss every design with Fiw before building UI
+(an artifact mock-up first). Abyssal is TideWM's test bench: every TideWM
+bug or missing protocol it runs into goes to TideWM's own TODO, never worked
+around with compositor knowledge in the shell. Reference for ideas (not
+looks): AngelOS-Dotfiles `modules/settings` (category tree in `tree.json`,
+pages built from small groups, search with synonyms, setup wizard in the
+same app).
+
+### Layer 1 — settings app rework (start here)
+
+Goal: a real settings app a user can live in instead of editing config,
+good-looking, following the active theme, without the odd options.
+1. [ ] Audit the current app: every option, where it writes, keep / merge /
+       drop. Show Fiw the list.
+2. [ ] Propose the structure (category tree like System, Devices, Network,
+       Personalisation, Windows & workspaces, Apps, Updates, About) and a
+       look; mock-up for Fiw to approve.
+3. [ ] Rebuild on the approved design; theme from the active Abyssal theme.
+4. [ ] Search across every setting, with synonyms and recent searches.
+5. [ ] Window and workspace pages drive TideWM through Wave/IPC (engine,
+       Scroll widths/presets/centering, animations, binds), validated before
+       writing, never Plasma config.
+
+### Layer 2 — system pieces
+
+- [ ] Polkit authentication dialog (Quickshell PolkitAgent), themed
+- [ ] Alt+Tab styles (the current switcher plus alternatives)
+- [ ] Workspace-switch animation picker (the styles themselves live in TideWM)
+- [ ] More panel customisation: new bar shapes (island, dock, capsules…) and
+      finer per-panel options
+
+### Layer 3 — first run and extensibility
+
+- [ ] Setup wizard on first login (look, theme, wallpaper, panels, apps)
+- [ ] Installer script (distro-agnostic, init-agnostic, asks before installing)
+- [ ] Plugin system (sandboxed widgets/pages, a template, docs)
+
+### Layer 4 — integrations
+
+- [ ] Voice input (VoxType or similar, optional)
+- [ ] Gaming tuner (per-game profiles; only generic, portable knobs)
+
+### Layer 5 — fun
+
+- [ ] Achievements, Steam-style toasts and a gallery ("installed Abyssal",
+      first theme, first plugin…); off switch in settings
+
 ## Next
 
 - [x] **Crash recovery.** `scripts/abyssal-session` on TideWM's spawn line:
