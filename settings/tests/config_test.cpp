@@ -142,4 +142,46 @@ void ConfigTest::autostartPreservesExistingStartup() {
   QVERIFY(managed.contains("music app"));
   QVERIFY(!managed.contains("do-not-run"));
 }
+void ConfigTest::appLookUsesProtectedDrafts() {
+  ConfigStore s(root);
+  s.setValue("settings", "backgroundStyle", "custom");
+  s.setValue("settings", "backgroundTop", "#16305a");
+  s.setValue("settings", "snow", 0);
+  QVERIFY(!QFileInfo::exists(config + "/abyssal/settings.json"));
+  QVERIFY(s.apply());
+  s.reload();
+  QCOMPARE(s.value("settings", "snow").toInt(), 0);
+  QCOMPARE(s.value("settings", "backgroundTop").toString(), "#16305a");
+  s.setValue("settings", "snow", 80);
+  write(config + "/abyssal/settings.json", R"({"external":true})");
+  QVERIFY(!s.apply());
+  QVERIFY(read(config + "/abyssal/settings.json").contains("external"));
+}
+
+void ConfigTest::invalidAppLookIsBlocked() {
+  for (const auto &draft : {R"({"glass":16})", R"({"snow":-1})",
+                           R"({"windowOpacity":39})", R"({"glowStrength":41})",
+                           R"({"backgroundTop":"broken"})",
+                           R"({"backgroundStyle":"broken"})",
+                           R"({"density":"broken"})", R"({"drift":1})"}) {
+    ConfigStore s(root);
+    s.setText("settings", draft);
+    QVERIFY(!s.apply());
+    QVERIFY(!QFileInfo::exists(config + "/abyssal/settings.json"));
+  }
+}
+
+void ConfigTest::resetAppLookPreservesUnknownKeys() {
+  write(config + "/abyssal/settings.json", R"({"glass":10,"future":42})");
+  ConfigStore s(root);
+  s.resetAppLook();
+  QCOMPARE(s.value("settings", "glass", 3).toInt(), 3);
+  QCOMPARE(s.value("settings", "future").toInt(), 42);
+  QVERIFY(read(config + "/abyssal/settings.json").contains("glass"));
+  QVERIFY(s.apply());
+  QVERIFY(!read(config + "/abyssal/settings.json").contains("glass"));
+  s.setText("settings", "{broken");
+  s.resetAppLook();
+  QCOMPARE(s.text("settings"), "{broken");
+}
 QTEST_GUILESS_MAIN(ConfigTest)

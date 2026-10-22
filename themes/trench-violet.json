@@ -1,5 +1,6 @@
 {
   "name": "Trench / Violet",
+  "backdrop": { "top": "#35245a" },
   "shape": "square",
   "mono": false,
   "glass": 0.94,

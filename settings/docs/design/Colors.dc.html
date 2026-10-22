@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Abyssal Settings — Colours and theme</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;0,800;1,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit}a:hover{opacity:.85}
+button{font:inherit;cursor:pointer}
+input{font:inherit}
+</style>
+</helmet>
+<div style="width: 1280px; height: 840px; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'JetBrains Mono', monospace; font-size: 12px; background: {{c.water}}; color: {{c.text}}; border-radius: 12px; border: 1px solid {{c.edge}}; overflow: hidden; position: relative">
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: {{c.shafts}}; pointer-events: none"></div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: {{c.snow}}; background-size: 210px 170px; pointer-events: none; opacity: .8"></div>
+
+  <header style="height: 38px; flex-shrink: 0; position: relative; display: flex; align-items: center; gap: 12px; padding: 0 10px 0 14px; border-bottom: 1px solid {{c.edge}}; background: {{c.bar}}">
+    <span style="font-weight: 700; letter-spacing: .5px">abyssal</span><span style="color: {{c.dim}}">·</span><span style="color: {{c.dim}}">settings — colours &amp; theme</span>
+    <span style="flex: 1"></span>
+    <button type="button" style="height: 26px; padding: 0 10px; border: 1px solid {{c.glowEdge}}; border-radius: 6px; background: transparent; color: {{c.glow}}; font-size: 11px; display: flex; align-items: center; gap: 6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>undo ‹accent›</button>
+    <span aria-hidden="true" style="width: 1px; height: 18px; background: {{c.edge}}"></span>
+    <button type="button" aria-label="Minimize" style="width: 28px; height: 26px; border: 0; background: transparent; color: {{c.dim}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 18h14"/></svg></button>
+    <button type="button" aria-label="Close" style="width: 28px; height: 26px; border: 0; background: transparent; color: {{c.dim}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </header>
+
+  <div style="flex: 1; min-height: 0; display: flex; position: relative">
+    <nav aria-label="Settings sections" style="width: 262px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px 12px; box-sizing: border-box; border-right: 1px solid {{c.edge}}; background: {{c.side}}">
+      <a href="#" style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; border: 1px solid {{c.edge}}; background: {{c.glass}}; text-decoration: none">
+        <span style="width: 38px; height: 38px; flex-shrink: 0; border-radius: 8px; background: {{c.glowSoft}}; border: 1px solid {{c.glow}}"></span>
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-weight: 700">[your name]</span><span style="font-size: 11px; color: {{c.dim}}">account · {{c.name}}</span></span>
+      </a>
+      <label style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid {{c.edge}}; background: {{c.deep}}; color: {{c.dim}}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" placeholder="search…" aria-label="Search settings" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: {{c.text}}; font-size: 12px">
+        <span style="font-size: 10px; padding: 1px 5px; border: 1px solid {{c.edge}}; border-radius: 4px">^F</span>
+      </label>
+      <div style="display: flex; flex-direction: column; gap: 1px; overflow: hidden">
+        <sc-for list="{{halls}}" as="h" hint-placeholder-count="4">
+          <div style="display: flex; align-items: center; gap: 6px; padding: 10px 4px 4px; font-size: 10px; letter-spacing: 2px; color: {{c.dim}}">{{h.title}}<span style="flex: 1; height: 1px; background: {{c.edge}}"></span></div>
+          <sc-for list="{{h.items}}" as="it" hint-placeholder-count="3">
+            <a href="#" style="{{it.style}}"><span style="flex: 1">{{it.label}}</span><span style="color: {{c.warn}}; font-size: 11px">{{it.star}}</span></a>
+          </sc-for>
+        </sc-for>
+      </div>
+    </nav>
+
+    <main style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px 22px 12px; box-sizing: border-box">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px">
+        <div style="display: flex; flex-direction: column; gap: 5px">
+          <span style="font-size: 11px; color: {{c.dim}}">look <span style="color: {{c.glow}}">›</span> colours &amp; theme</span>
+          <h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.5px">Colours <span style="color: {{c.glow}}">&amp;</span> theme</h1>
+          <span style="font-size: 11px; color: {{c.dim}}">Every colour in the shell, this app, GTK, Qt and TideWM borders comes from these 13 tokens.</span>
+        </div>
+        <div style="display: flex; gap: 6px">
+          <button type="button" style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid {{c.edge}}; background: {{c.glass}}; color: {{c.text}}; font-size: 11px">◐ from wallpaper</button>
+          <button type="button" style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid {{c.edge}}; background: {{c.glass}}; color: {{c.text}}; font-size: 11px">import</button>
+          <button type="button" style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid {{c.edge}}; background: {{c.glass}}; color: {{c.text}}; font-size: 11px">export .json</button>
+        </div>
+      </div>
+
+      <div role="radiogroup" aria-label="Theme" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px">
+        <sc-for list="{{presets}}" as="p" hint-placeholder-count="5">
+          <button type="button" role="radio" aria-checked="{{p.on}}" style="{{p.style}}">
+            <span style="display: flex; height: 26px; border-radius: 5px; overflow: hidden">
+              <sc-for list="{{p.strip}}" as="s" hint-placeholder-count="6"><span style="flex: 1; background: {{s}}"></span></sc-for>
+            </span>
+            <span style="display: flex; justify-content: space-between; align-items: center"><span style="font-weight: 700; font-size: 11px">{{p.name}}</span><span style="font-size: 10px; color: {{c.dim}}">{{p.tag}}</span></span>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+        <section style="position: relative; border-radius: 10px; border: 1px solid {{c.edge}}; background: {{c.glass}}; padding: 4px 14px 8px; overflow: hidden">
+          <span aria-hidden="true" style="position: absolute; left: -1px; top: -1px; width: 12px; height: 12px; border-left: 2px solid {{c.glow}}; border-top: 2px solid {{c.glow}}; border-top-left-radius: 10px"></span>
+          <span aria-hidden="true" style="position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-right: 2px solid {{c.glow}}; border-bottom: 2px solid {{c.glow}}; border-bottom-right-radius: 10px"></span>
+          <h2 style="margin: 0; padding: 8px 0 4px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: {{c.glow}}; display: flex; align-items: center; gap: 8px">PALETTE<span style="flex: 1; height: 1px; background: {{c.edge}}"></span><span style="font-weight: 400; color: {{c.dim}}; letter-spacing: 0">custom-1.json</span></h2>
+          <sc-for list="{{groups}}" as="g" hint-placeholder-count="4">
+            <div style="font-size: 10px; letter-spacing: 1.5px; color: {{c.dim}}; padding: 7px 0 3px">{{g.title}}</div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px">
+              <sc-for list="{{g.tokens}}" as="k" hint-placeholder-count="4">
+                <button type="button" style="{{k.style}}">
+                  <span style="width: 26px; height: 26px; flex-shrink: 0; border-radius: 6px; background: {{k.hex}}; box-shadow: inset 0 0 0 1px {{c.edge}}"></span>
+                  <span style="flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; text-align: left"><span style="font-weight: 700; font-size: 11px">{{k.name}}</span><span style="font-size: 10px; color: {{c.dim}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{k.role}}</span></span>
+                  <span style="font-size: 10px; color: {{c.dim}}">{{k.hex}}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-for>
+          <div style="margin-top: 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid {{c.glowEdge}}; background: {{c.deep}}; display: flex; flex-direction: column; gap: 6px">
+            <span style="display: flex; justify-content: space-between; font-size: 11px"><span>editing <b style="color: {{c.accent}}">accent</b></span><span style="color: {{c.dim}}">{{c.accent}}</span></span>
+            <sc-for list="{{hsl}}" as="h" hint-placeholder-count="3">
+              <span style="display: flex; align-items: center; gap: 8px; font-size: 10px; color: {{c.dim}}"><span style="width: 12px">{{h.k}}</span><span style="flex: 1; height: 8px; border-radius: 4px; background: {{h.track}}; position: relative"><span style="{{h.knob}}"></span></span><span style="width: 30px; text-align: right">{{h.v}}</span></span>
+            </sc-for>
+          </div>
+        </section>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; min-height: 0">
+          <section aria-label="Live preview" style="position: relative; height: 250px; flex-shrink: 0; border-radius: 10px; border: 1px solid {{c.edge}}; overflow: hidden; background: {{c.wall}}">
+            <div style="position: absolute; left: 10px; right: 10px; top: 8px; height: 24px; border-radius: {{c.pill}}; background: {{c.barP}}; border: 1px solid {{c.edge}}; display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 10px">
+              <span style="width: 16px; height: 6px; border-radius: 3px; background: {{c.accent}}"></span><span style="width: 6px; height: 6px; border-radius: 3px; background: {{c.overlay}}"></span><span style="width: 6px; height: 6px; border-radius: 3px; background: {{c.overlay}}"></span>
+              <span style="flex: 1; text-align: center; font-weight: 700">21:47</span><span style="color: {{c.dim}}">♪ 38° ◔</span>
+            </div>
+            <div style="position: absolute; left: 14px; top: 44px; width: 250px; height: 150px; border-radius: 9px; background: {{c.base}}; border: 2px solid {{c.glow}}; box-shadow: 0 0 18px {{c.glowSoft}}; display: flex; flex-direction: column; overflow: hidden">
+              <span style="height: 22px; display: flex; align-items: center; padding: 0 8px; font-size: 10px; background: {{c.surface0}}; color: {{c.dim}}">kitty — ~/abyssal</span>
+              <span style="flex: 1; padding: 8px; font-size: 10px; line-height: 1.6"><span style="color: {{c.success}}">➜</span> <span style="color: {{c.glow}}">~/abyssal</span> git status<br><span style="color: {{c.warn}}">modified:</span> themes/custom-1.json<br><span style="color: {{c.danger}}">deleted:</span> old.qml<br><span style="color: {{c.accent}}">●</span> <span style="color: {{c.rose}}">main</span></span>
+            </div>
+            <div style="position: absolute; right: 12px; top: 44px; width: 190px; border-radius: 9px; background: {{c.surface0}}; border: 1px solid {{c.edge}}; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; font-size: 10px">
+              <span style="font-weight: 700">Update ready</span><span style="color: {{c.dim}}">12 packages · 84 MB</span>
+              <span style="display: flex; gap: 6px; margin-top: 4px"><span style="padding: 3px 8px; border-radius: 5px; background: {{c.accent}}; color: {{c.crust}}; font-weight: 700">install</span><span style="padding: 3px 8px; border-radius: 5px; background: {{c.surface1}}">later</span></span>
+            </div>
+            <div style="position: absolute; right: 12px; top: 128px; width: 190px; border-radius: 9px; background: {{c.surface0}}; border: 1px solid {{c.edge}}; padding: 8px 10px; display: flex; flex-direction: column; gap: 7px; font-size: 10px">
+              <span style="display: flex; align-items: center; justify-content: space-between">wi-fi<span style="width: 26px; height: 14px; border-radius: 7px; background: {{c.accent}}; display: flex; justify-content: flex-end; padding: 2px; box-sizing: border-box"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{c.crust}}"></span></span></span>
+              <span style="display: flex; align-items: center; gap: 6px">vol<span style="flex: 1; height: 4px; border-radius: 2px; background: linear-gradient(90deg, {{c.glow}} 64%, {{c.surface1}} 64%)"></span></span>
+            </div>
+            <span style="position: absolute; left: 10px; bottom: 6px; font-size: 9px; color: {{c.dim}}">live preview · your desktop with these colours</span>
+          </section>
+
+          <section style="position: relative; flex: 1; min-height: 0; border-radius: 10px; border: 1px solid {{c.edge}}; background: {{c.glass}}; padding: 4px 14px 6px">
+            <h2 style="margin: 0; padding: 8px 0 4px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: {{c.glow}}; display: flex; align-items: center; gap: 8px">CONTRAST<span style="flex: 1; height: 1px; background: {{c.edge}}"></span></h2>
+            <sc-for list="{{contrast}}" as="r" hint-placeholder-count="3">
+              <div style="display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 11px">
+                <span style="padding: 2px 8px; border-radius: 4px; background: {{r.bg}}; color: {{r.fg}}; font-weight: 700">Aa</span>
+                <span style="flex: 1; color: {{c.dim}}">{{r.pair}}</span><span style="font-weight: 700">{{r.ratio}}</span><span style="{{r.badge}}">{{r.grade}}</span>
+              </div>
+            </sc-for>
+            <h2 style="margin: 0; padding: 8px 0 4px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: {{c.glow}}; display: flex; align-items: center; gap: 8px">APPLY TO<span style="flex: 1; height: 1px; background: {{c.edge}}"></span></h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px">
+              <sc-for list="{{targets}}" as="t" hint-placeholder-count="6">
+                <button type="button" role="switch" aria-checked="{{t.on}}" style="{{t.style}}">{{t.mark}} {{t.label}}</button>
+              </sc-for>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <footer style="height: 24px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding-top: 6px; border-top: 1px solid {{c.edge}}; font-size: 10px; color: {{c.dim}}">
+        <span>next door: <a href="#" style="color: {{c.text}}">fonts ›</a>  <a href="#" style="color: {{c.text}}">wallpaper ›</a></span>
+        <span>~/.config/abyssal/themes/custom-1.json</span>
+        <span style="flex: 1"></span>
+        <span>shipped themes stay read-only · edits go to a copy</span>
+      </footer>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["Abyssal Tide","Trench Violet","Kelp Forest","Ember Vent"],"default":"Abyssal Tide","section":"Theme"},"custom":{"editor":"boolean","default":true,"section":"Theme"},"accent":{"editor":"color","default":"#ff7ab8","options":["#ff7ab8","#a98bff","#6fe0b4","#ffb547"],"section":"Theme"},"glow":{"editor":"color","default":"#5ff0e0","options":["#5ff0e0","#7fd6e6","#94dbd7","#f5c27a"],"section":"Theme"},"$preview":{"width":1280,"height":840}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const T = {
+      'Abyssal Tide': { crust: '#080b17', base: '#0c1020', surface0: '#161b2e', surface1: '#212841', overlay: '#525c7e', subtext: '#a3abcb', text: '#dde3f6', accent: '#a98bff', cyan: '#7fd6e6', rose: '#f28fb0', warn: '#f5c27a', danger: '#ff7a95', success: '#8be0b0', top: '#16305a', shape: 'pill' },
+      'Trench Violet': { crust: '#0e0917', base: '#1b1328', surface0: '#291c3b', surface1: '#342447', overlay: '#a18bb5', subtext: '#c3b2d2', text: '#f1eaf7', accent: '#c5a5ef', cyan: '#94dbd7', rose: '#eea2c5', warn: '#f5c27a', danger: '#ff7a95', success: '#8be0b0', top: '#35245a', shape: 'square' },
+      'Kelp Forest': { crust: '#06110f', base: '#0a1916', surface0: '#12261f', surface1: '#1b342b', overlay: '#4f7466', subtext: '#9cc2b2', text: '#ddf2e8', accent: '#6fe0b4', cyan: '#7fd6e6', rose: '#f2b38f', warn: '#f5c27a', danger: '#ff7a95', success: '#8be0b0', top: '#14423a', shape: 'pill' },
+      'Ember Vent': { crust: '#120a0a', base: '#1a0f0f', surface0: '#2a1916', surface1: '#36211c', overlay: '#80625a', subtext: '#d1b3a8', text: '#f6e7e1', accent: '#ff9e6b', cyan: '#f5c27a', rose: '#ff7a95', warn: '#f5c27a', danger: '#ff6b6b', success: '#a8d98b', top: '#3f1d14', shape: 'pill' }
+    };
+    const name = T[this.props.theme] ? this.props.theme : 'Abyssal Tide';
+    const custom = this.props.custom ?? true;
+    const t = Object.assign({}, T[name]);
+    if (custom) { t.accent = this.props.accent ?? '#ff7ab8'; t.cyan = this.props.glow ?? '#5ff0e0'; }
+    const lum = (h) => { const v = [1, 3, 5].map((i) => { let x = parseInt(h.substr(i, 2), 16) / 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+    const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    const c = {
+      name: custom ? 'custom-1' : name.toLowerCase(),
+      text: t.text, dim: t.subtext, glow: t.cyan, accent: t.accent, warn: t.warn, danger: t.danger, success: t.success, rose: t.rose,
+      crust: t.crust, base: t.base, surface0: t.surface0, surface1: t.surface1, overlay: t.overlay,
+      water: 'linear-gradient(180deg, ' + t.top + ' 0%, ' + t.base + ' 38%, ' + t.crust + ' 100%)',
+      shafts: 'linear-gradient(104deg, transparent 34%, ' + t.cyan + '0b 40%, transparent 46%, transparent 60%, ' + t.cyan + '0e 66%, transparent 73%), radial-gradient(ellipse 60% 30% at 62% -6%, ' + t.cyan + '22, transparent 70%)',
+      snow: 'radial-gradient(circle at 30px 40px, ' + t.text + '50 0 1px, transparent 1.6px), radial-gradient(circle at 150px 100px, ' + t.text + '38 0 1px, transparent 1.6px), radial-gradient(circle at 90px 150px, ' + t.cyan + '40 0 1.2px, transparent 1.8px)',
+      wall: 'radial-gradient(ellipse at 30% 0%, ' + t.accent + '33, transparent 60%), linear-gradient(160deg, ' + t.surface1 + ', ' + t.crust + ')',
+      bar: t.crust + 'cc', barP: t.base + 'e6', side: t.crust + '66', glass: t.text + '08', deep: t.crust + 'b3', edge: t.text + '17',
+      glowSoft: t.cyan + '26', glowEdge: t.cyan + '55',
+      pill: t.shape === 'pill' ? '12px' : '3px'
+    };
+    const item = (label, on, star) => ({
+      label, star: star ? '★' : '',
+      style: 'display: flex; align-items: center; gap: 10px; height: 26px; padding: 0 10px; border-radius: 0 7px 7px 0; text-decoration: none; font-size: 12px; '
+        + (on ? 'background: linear-gradient(90deg, ' + c.glowSoft + ', transparent 85%); color: ' + c.glow + '; font-weight: 700; box-shadow: inset 2px 0 0 ' + c.glow : 'color: ' + c.dim + '; box-shadow: inset 1px 0 0 ' + c.edge)
+    });
+    const preset = (n, p, on, tag) => ({
+      name: n, tag, on: on ? 'true' : 'false',
+      strip: [p.crust, p.base, p.surface1, p.text, p.accent, p.cyan, p.rose],
+      style: 'padding: 7px; border-radius: 9px; display: flex; flex-direction: column; gap: 6px; text-align: left; color: ' + c.text + '; background: ' + c.deep + '; '
+        + (on ? 'border: 1px solid ' + c.glow + '; box-shadow: 0 0 16px ' + c.glowSoft : 'border: 1px solid ' + c.edge)
+    });
+    const tok = (n, role, sel) => ({
+      name: n, role, hex: t[n === 'glow' ? 'cyan' : n],
+      style: 'display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 7px; color: ' + c.text + '; '
+        + (sel ? 'background: ' + c.glowSoft + '; border: 1px solid ' + c.glowEdge : 'background: transparent; border: 1px solid transparent')
+    });
+    const hx = t.accent;
+    const r = parseInt(hx.substr(1, 2), 16) / 255, g = parseInt(hx.substr(3, 2), 16) / 255, b = parseInt(hx.substr(5, 2), 16) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), L = (mx + mn) / 2, d = mx - mn;
+    const S = d === 0 ? 0 : d / (1 - Math.abs(2 * L - 1));
+    let H = 0;
+    if (d) H = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    H = Math.round((H * 60 + 360) % 360);
+    const knob = (pct) => 'position: absolute; top: -3px; left: calc(' + pct + '% - 7px); width: 14px; height: 14px; border-radius: 50%; background: ' + c.text + '; box-shadow: 0 0 0 2px ' + t.crust;
+    const grade = (x, min) => x >= 7 ? 'AAA' : x >= min ? 'AA' : 'low';
+    const pair = (bg, fg, label, min) => {
+      const x = ratio(t[bg], t[fg]);
+      const gr = grade(x, min);
+      return { bg: t[bg], fg: t[fg], pair: label, ratio: x.toFixed(1) + ':1', grade: gr,
+        badge: 'font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 700; ' + (gr === 'low' ? 'background: ' + t.danger + '; color: ' + t.crust : 'background: ' + t.success + '33; color: ' + t.success) };
+    };
+    const target = (label, on) => ({
+      label, on: on ? 'true' : 'false', mark: on ? '●' : '○',
+      style: 'height: 26px; padding: 0 10px; border-radius: 6px; font-size: 11px; ' + (on ? 'border: 1px solid ' + c.glowEdge + '; background: ' + c.glowSoft + '; color: ' + c.text : 'border: 1px solid ' + c.edge + '; background: transparent; color: ' + c.dim)
+    });
+    return {
+      c,
+      halls: [
+        { title: 'LOOK', items: [item('colours & theme', true), item('wallpaper'), item('fonts', false, true), item('icons & cursor'), item('panels'), item('widgets'), item('lock screen')] },
+        { title: 'DESKTOP', items: [item('windows'), item('workspaces'), item('animations'), item('keyboard'), item('displays')] },
+        { title: 'SYSTEM', items: [item('sound'), item('network'), item('notifications'), item('updates')] }
+      ],
+      presets: [
+        preset('abyssal tide', T['Abyssal Tide'], !custom && name === 'Abyssal Tide', 'pill'),
+        preset('trench violet', T['Trench Violet'], !custom && name === 'Trench Violet', 'square'),
+        preset('kelp forest', T['Kelp Forest'], !custom && name === 'Kelp Forest', 'pill'),
+        preset('ember vent', T['Ember Vent'], !custom && name === 'Ember Vent', 'pill'),
+        preset('custom-1 ✎', t, custom, 'from ' + name.split(' ')[0].toLowerCase())
+      ],
+      groups: [
+        { title: 'SURFACES', tokens: [tok('crust', 'deepest: bar, edges'), tok('base', 'window background'), tok('surface0', 'cards, popups'), tok('surface1', 'hover, inputs'), tok('overlay', 'muted icons')] },
+        { title: 'TEXT', tokens: [tok('text', 'main text'), tok('subtext', 'hints, labels')] },
+        { title: 'ACCENTS', tokens: [tok('accent', 'buttons, active', true), tok('glow', 'focus, selection'), tok('rose', 'highlights')] },
+        { title: 'STATES', tokens: [tok('warn', 'new, caution'), tok('danger', 'errors, delete'), tok('success', 'ok, saved')] }
+      ],
+      hsl: [
+        { k: 'H', v: H + '°', track: 'linear-gradient(90deg, #f55, #fd5, #5f8, #5df, #a5f, #f55)', knob: knob(H / 3.6) },
+        { k: 'S', v: Math.round(S * 100) + '%', track: 'linear-gradient(90deg, #888, ' + t.accent + ')', knob: knob(S * 100) },
+        { k: 'L', v: Math.round(L * 100) + '%', track: 'linear-gradient(90deg, #000, ' + t.accent + ', #fff)', knob: knob(L * 100) }
+      ],
+      contrast: [pair('base', 'text', 'text on base', 4.5), pair('base', 'subtext', 'subtext on base', 4.5), pair('accent', 'crust', 'text on accent buttons', 4.5), pair('surface0', 'cyan', 'glow on cards', 3)],
+      targets: [target('shell', true), target('this app', true), target('GTK 3/4', true), target('Qt / Kvantum', true), target('TideWM borders', true), target('terminal', false), target('lock screen', true)]
+    };
+  }
+}
+</script>
+</body>
+</html>

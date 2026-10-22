@@ -30,6 +30,7 @@ public:
   Q_INVOKABLE void setAutostart(QVariantList apps);
   Q_INVOKABLE QVariantMap account() const;
   Q_INVOKABLE QString copyTheme(QString id);
+  Q_INVOKABLE void resetAppLook();
   Q_INVOKABLE bool apply();
   Q_INVOKABLE void reload();
   Q_INVOKABLE void launch(QString action);

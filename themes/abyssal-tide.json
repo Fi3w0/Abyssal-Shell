@@ -1,5 +1,6 @@
 {
   "name": "Abyssal Tide",
+  "backdrop": { "top": "#16305a" },
   "shape": "pill",
   "mono": true,
   "glass": 0.72,

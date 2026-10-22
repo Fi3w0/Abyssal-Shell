@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Abyssal Settings — Settings map</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 1180px; box-sizing: border-box; padding: 26px 28px; display: flex; flex-direction: column; gap: 16px; font-family: 'JetBrains Mono', monospace; font-size: 11px; background: {{c.water}}; color: {{c.text}}; border-radius: 12px; border: 1px solid {{c.edge}}; overflow: hidden">
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 11px; color: {{c.dim}}">abyssal settings › planning</span>
+      <h1 style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -.5px">Settings map</h1>
+      <span style="color: {{c.dim}}">Everything a user should be able to change without touching a config file. Two levels only: section › page.</span>
+    </div>
+    <div style="display: flex; gap: 10px">
+      <sc-for list="{{stats}}" as="s" hint-placeholder-count="3">
+        <div style="padding: 10px 14px; border-radius: 10px; border: 1px solid {{s.edge}}; background: {{c.glass}}; display: flex; flex-direction: column; gap: 3px; min-width: 150px">
+          <span style="color: {{c.dim}}; font-size: 10px; letter-spacing: 1px">{{s.label}}</span>
+          <span style="font-size: 22px; font-weight: 800; color: {{s.color}}">{{s.pages}}</span>
+          <span style="color: {{c.dim}}; font-size: 10px">{{s.rows}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 18px; color: {{c.dim}}; font-size: 11px">
+    <span><span style="color: {{c.ok}}">●</span> exists now</span>
+    <span><span style="color: {{c.warn}}">◐</span> exists, needs a proper page</span>
+    <span><span style="color: {{c.glow}}">+</span> new</span>
+    <span><span style="color: {{c.rose}}">★</span> Abyssal-only idea</span>
+  </div>
+
+  <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-content: start">
+    <sc-for list="{{cols}}" as="col" hint-placeholder-count="4">
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <sc-for list="{{col}}" as="cat" hint-placeholder-count="2">
+          <section style="position: relative; border-radius: 10px; border: 1px solid {{c.edge}}; background: {{c.glass}}; padding: 4px 12px 8px">
+            <span aria-hidden="true" style="position: absolute; left: -1px; top: -1px; width: 10px; height: 10px; border-left: 2px solid {{c.glow}}; border-top: 2px solid {{c.glow}}; border-top-left-radius: 10px"></span>
+            <h2 style="margin: 0; padding: 8px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: {{c.glow}}; display: flex; align-items: center; gap: 8px">{{cat.title}}<span style="flex: 1; height: 1px; background: {{c.edge}}"></span><span style="font-weight: 400; color: {{c.dim}}; letter-spacing: 0">{{cat.count}}</span></h2>
+            <sc-for list="{{cat.pages}}" as="p" hint-placeholder-count="4">
+              <div style="display: flex; gap: 8px; padding: 4px 0; border-top: 1px solid {{c.edge}}">
+                <span style="width: 12px; flex-shrink: 0; color: {{p.color}}; font-weight: 700">{{p.mark}}</span>
+                <span style="display: flex; flex-direction: column; gap: 1px; min-width: 0"><span style="font-weight: 700">{{p.name}}</span><span style="color: {{c.dim}}; font-size: 10px; line-height: 1.4">{{p.what}}</span></span>
+              </div>
+            </sc-for>
+          </section>
+        </sc-for>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="display: flex; gap: 12px; color: {{c.dim}}; font-size: 10px; line-height: 1.5">
+    <span style="flex: 1">Taken from AngelOS: Presets, Home with system status, "More…" folds, new-setting stars, next-door links, undo, row previews, one test that every setting lives on exactly one page.</span>
+    <span style="flex: 1">Skipped from AngelOS: the angel/game/rewards/diary pages, stream &amp; OBS, telemetry, author-only pages, Windows-style Start menu.</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["Abyssal Tide","Trench Violet","Kelp Forest","Ember Vent"],"default":"Abyssal Tide"},"$preview":{"width":1280,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const T = {
+      'Abyssal Tide': { crust: '#080b17', base: '#0c1020', subtext: '#a3abcb', text: '#dde3f6', cyan: '#7fd6e6', rose: '#f28fb0', warn: '#f5c27a', success: '#8be0b0', top: '#16305a' },
+      'Trench Violet': { crust: '#0e0917', base: '#1b1328', subtext: '#c3b2d2', text: '#f1eaf7', cyan: '#94dbd7', rose: '#eea2c5', warn: '#f5c27a', success: '#8be0b0', top: '#35245a' },
+      'Kelp Forest': { crust: '#06110f', base: '#0a1916', subtext: '#9cc2b2', text: '#ddf2e8', cyan: '#7fd6e6', rose: '#f2b38f', warn: '#f5c27a', success: '#8be0b0', top: '#14423a' },
+      'Ember Vent': { crust: '#120a0a', base: '#1a0f0f', subtext: '#d1b3a8', text: '#f6e7e1', cyan: '#f5c27a', rose: '#ff7a95', warn: '#f5c27a', success: '#a8d98b', top: '#3f1d14' }
+    };
+    const t = T[this.props.theme] || T['Abyssal Tide'];
+    const c = {
+      text: t.text, dim: t.subtext, glow: t.cyan, warn: t.warn, ok: t.success, rose: t.rose,
+      water: 'linear-gradient(180deg, ' + t.top + ' 0%, ' + t.base + ' 30%, ' + t.crust + ' 100%)',
+      glass: t.text + '08', edge: t.text + '17'
+    };
+    const M = { have: ['●', c.ok], part: ['◐', c.warn], add: ['+', c.glow], own: ['★', c.rose] };
+    const pg = (s, name, what) => ({ name, what, mark: M[s][0], color: M[s][1] });
+    const cat = (title, pages) => ({ title, pages, count: pages.length + ' pages' });
+    const home = cat('HOME', [
+      pg('add', 'Home', 'you, system health, recent changes, most-opened pages'),
+      pg('add', 'Presets', 'save the whole setup under a name: calm, work, gaming; share as a file')
+    ]);
+    const look = cat('LOOK', [
+      pg('have', 'Colours & theme', 'presets, custom copy, opacity, radii · + contrast check, apply to GTK/Qt/terminal'),
+      pg('have', 'Wallpaper', 'picker, renderer, transitions · + per-monitor, slideshow, video'),
+      pg('add', 'Fonts', 'UI + mono font, size, hinting, presets'),
+      pg('part', 'Icons & cursor', 'monochrome icons now · + icon theme, cursor theme and size'),
+      pg('part', 'Panels', 'opens the live editor · + position, shape, auto-hide, per-monitor'),
+      pg('part', 'Widgets', 'live editor · + list of desktop widgets with their own settings'),
+      pg('add', 'Launcher', 'style, size, search sources, actions, recent apps'),
+      pg('part', 'Lock screen', 'idle timers now · + clock, blur, avatar, login screen'),
+      pg('add', 'OSD & popups', 'volume/brightness OSD style, position, duration')
+    ]);
+    const desk = cat('DESKTOP · TIDEWM', [
+      pg('add', 'Layout', 'classic / ocean / scroll and each engine’s options'),
+      pg('add', 'Windows', 'gaps, borders, focus ring, radius, shadows, blur, decorations'),
+      pg('part', 'Window rules', 'raw file editor now · + per-app float, size, workspace, opacity'),
+      pg('add', 'Workspaces', 'count, names, per-monitor, empty-workspace behaviour'),
+      pg('add', 'Animations', 'open/close, workspace switch, curves, speed, off'),
+      pg('add', 'Alt+Tab & overview', 'style, which windows, previews, delay'),
+      pg('add', 'Gestures', 'touchpad swipes → workspaces, overview, scroll'),
+      pg('own', 'Tides', 'TideWM contexts / depth-moods once designed')
+    ]);
+    const input = cat('INPUT', [
+      pg('add', 'Keyboard', 'layouts, switch key, repeat rate/delay, numlock'),
+      pg('part', 'Shortcuts', 'single-line edit now · + record keys, conflicts, search, groups'),
+      pg('add', 'Mouse', 'speed, acceleration, natural scroll, left-handed'),
+      pg('add', 'Touchpad', 'tap to click, scrolling, disable while typing, speed'),
+      pg('add', 'Gamepad & tablet', 'devices, buttons, mapping')
+    ]);
+    const disp = cat('DISPLAYS', [
+      pg('add', 'Displays', 'arrange, resolution, refresh, scale, VRR, rotation, primary'),
+      pg('add', 'Night light', 'schedule, temperature, manual toggle')
+    ]);
+    const sound = cat('SOUND', [
+      pg('add', 'Sound', 'output, input, per-app volume, balance'),
+      pg('add', 'System sounds', 'event sounds, volume, your own sound pack')
+    ]);
+    const net = cat('NETWORK & DEVICES', [
+      pg('add', 'Wi-Fi & Ethernet', 'networks, hidden, metered, IP'),
+      pg('add', 'VPN', 'WireGuard / OpenVPN profiles'),
+      pg('add', 'Bluetooth', 'nearby, paired, battery levels'),
+      pg('add', 'Quick share', 'LocalSend: send files to a phone')
+    ]);
+    const sys = cat('SYSTEM', [
+      pg('part', 'Notifications', 'duration, max, DND now · + per-app rules, position, history'),
+      pg('part', 'Power & idle', 'blank/lock timers now · + power profile, suspend, lid, battery'),
+      pg('add', 'Screenshots & recording', 'folder, format, cursor, region, recorder'),
+      pg('have', 'Startup apps', 'apps launched at login'),
+      pg('add', 'Default apps', 'browser, files, terminal, editor, media'),
+      pg('have', 'Updates', 'schedule, package managers, Flatpak, AUR'),
+      pg('add', 'Plugins', 'installed, catalog, each plugin’s own page'),
+      pg('add', 'Accessibility', 'text size, reduce motion, contrast, magnifier'),
+      pg('have', 'Account', 'name, avatar, password'),
+      pg('add', 'About', 'this computer, versions, report a problem')
+    ]);
+    const exp = cat('EXPERT', [
+      pg('have', 'Config files', 'backups, rollback, external-change checks'),
+      pg('part', 'TideWM config', 'included-file editor → becomes the fallback'),
+      pg('add', 'IPC & scripts', 'events, custom commands, hooks'),
+      pg('own', 'Gaming mode', 'fewer effects, no popups, tearing, tuner'),
+      pg('add', 'Developer', 'debug overlay, logs, reload shell')
+    ]);
+    const all = [home, look, desk, input, disp, sound, net, sys, exp];
+    const n = all.reduce((a, x) => a + x.pages.length, 0);
+    return {
+      c,
+      cols: [[home, look], [desk, input, disp], [sound, net, sys], [exp]],
+      stats: [
+        { label: 'ABYSSAL NOW', pages: '11 pages', rows: '≈ 40 controls', color: c.warn, edge: c.edge },
+        { label: 'ANGELOS', pages: '51 pages', rows: '≈ 690 setting rows', color: c.rose, edge: c.edge },
+        { label: 'THIS MAP', pages: n + ' pages', rows: '≈ 350–450 rows', color: c.glow, edge: c.glow + '55' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

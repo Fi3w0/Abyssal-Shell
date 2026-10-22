@@ -1,5 +1,6 @@
 {
   "name": "Ember Vent",
+  "backdrop": { "top": "#3f1d14" },
   "shape": "pill",
   "mono": false,
   "glass": 0.76,

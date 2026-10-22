@@ -15,8 +15,10 @@ References studied on 2026-10-21:
 - [Noctalia architecture](https://github.com/noctalia-dev/noctalia/blob/main/ARCHITECTURE.md):
   boundaries between controls, shell features and services.
 
-Abyssal retains its own dark purple palette, restrained surfaces and compact
-controls. Settings use drafts and explicit Apply. Preserve existing widgets,
+The current direction is the Drowned archive: theme-driven water gradients,
+light shafts and marine snow, glass groups with corner brackets, JetBrains Mono
+and a lit-edge sidebar. The approved canvas and specification are archived under
+`design/`; implementation scope is recorded in STATUS.md. Settings use drafts and explicit Apply. Preserve existing widgets,
 unknown configuration keys, comments, included files and symlink destinations.
 Keep machine-specific output placement in local compositor preferences rather
 than the application. Previews on this machine belong on HDMI, floating, without

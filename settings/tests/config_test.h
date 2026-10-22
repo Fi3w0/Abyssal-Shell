@@ -20,4 +20,7 @@ private slots:
   void shippedThemesCannotBeEdited();
   void keybindDuplicateIsBlocked();
   void autostartPreservesExistingStartup();
+  void appLookUsesProtectedDrafts();
+  void invalidAppLookIsBlocked();
+  void resetAppLookPreservesUnknownKeys();
 };

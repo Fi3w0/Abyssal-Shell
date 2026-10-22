@@ -66,10 +66,13 @@ Goal: a real settings app a user can live in instead of editing config,
 good-looking, following the active theme, without the odd options.
 1. [ ] Audit the current app: every option, where it writes, keep / merge /
        drop. Show Fiw the list.
-2. [ ] Propose the structure (category tree like System, Devices, Network,
+2. [x] Propose the structure (category tree like System, Devices, Network,
        Personalisation, Windows & workspaces, Apps, Updates, About) and a
        look; mock-up for Fiw to approve.
 3. [ ] Rebuild on the approved design; theme from the active Abyssal theme.
+       Drowned archive foundation and This app are implemented; eleven original
+       pages retained. Registry, full inventory and compositor forms remain.
+       Approved references: settings/docs/design; state: settings/docs/STATUS.md.
 4. [ ] Search across every setting, with synonyms and recent searches.
 5. [ ] Window and workspace pages drive TideWM through Wave/IPC (engine,
        Scroll widths/presets/centering, animations, binds), validated before

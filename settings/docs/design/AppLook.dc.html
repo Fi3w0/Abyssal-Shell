@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Abyssal Settings — This app's look</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;0,800;1,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit}a:hover{opacity:.85}
+button{font:inherit;cursor:pointer}
+input{font:inherit}
+</style>
+</helmet>
+<div style="width: 1280px; height: 840px; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'JetBrains Mono', monospace; font-size: 12px; background: {{c.water}}; color: {{c.text}}; border-radius: 12px; border: 1px solid {{c.edge}}; overflow: hidden; position: relative">
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: {{c.shafts}}; pointer-events: none; opacity: {{c.shaftOp}}"></div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: {{c.snow}}; background-size: 210px 170px; pointer-events: none; opacity: {{c.snowOp}}"></div>
+
+  <header style="height: 38px; flex-shrink: 0; position: relative; display: flex; align-items: center; gap: 12px; padding: 0 10px 0 14px; border-bottom: 1px solid {{c.edge}}; background: {{c.bar}}">
+    <span style="font-weight: 700; letter-spacing: .5px">abyssal</span><span style="color: {{c.dim}}">·</span><span style="color: {{c.dim}}">settings — this app</span>
+    <span style="flex: 1"></span>
+    <button type="button" style="height: 26px; padding: 0 10px; border: 1px solid {{c.glowEdge}}; border-radius: 6px; background: transparent; color: {{c.glow}}; font-size: 11px">↶ undo ‹light shafts›</button>
+    <span aria-hidden="true" style="width: 1px; height: 18px; background: {{c.edge}}"></span>
+    <button type="button" aria-label="Minimize" style="width: 28px; height: 26px; border: 0; background: transparent; color: {{c.dim}}">–</button>
+    <button type="button" aria-label="Close" style="width: 28px; height: 26px; border: 0; background: transparent; color: {{c.dim}}">×</button>
+  </header>
+
+  <div style="flex: 1; min-height: 0; display: flex; position: relative">
+    <nav aria-label="Settings sections" style="width: 262px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px 12px; box-sizing: border-box; border-right: 1px solid {{c.edge}}; background: {{c.side}}">
+      <label style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid {{c.edge}}; background: {{c.deep}}; color: {{c.dim}}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" placeholder="search…" aria-label="Search settings" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: {{c.text}}; font-size: 12px">
+      </label>
+      <div style="display: flex; flex-direction: column; gap: 1px">
+        <sc-for list="{{halls}}" as="h" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 6px; padding: 10px 4px 4px; font-size: 10px; letter-spacing: 2px; color: {{c.dim}}">{{h.title}}<span style="flex: 1; height: 1px; background: {{c.edge}}"></span></div>
+          <sc-for list="{{h.items}}" as="it" hint-placeholder-count="3">
+            <a href="#" style="{{it.style}}"><span style="flex: 1">{{it.label}}</span><span style="color: {{c.warn}}; font-size: 11px">{{it.star}}</span></a>
+          </sc-for>
+        </sc-for>
+      </div>
+    </nav>
+
+    <main style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px 22px 12px; box-sizing: border-box">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px">
+        <div style="display: flex; flex-direction: column; gap: 5px">
+          <span style="font-size: 11px; color: {{c.dim}}">look <span style="color: {{c.glow}}">›</span> this app</span>
+          <h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.5px">This app’s look</h1>
+          <span style="font-size: 11px; color: {{c.dim}}">The settings window follows your theme. Change how much of the abyss you want around you.</span>
+        </div>
+        <div style="display: flex; gap: 6px">
+          <button type="button" style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid {{c.edge}}; background: {{c.glass}}; color: {{c.text}}; font-size: 11px">reset to theme</button>
+          <button type="button" style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid {{c.glowEdge}}; background: {{c.glowSoft}}; color: {{c.text}}; font-size: 11px">save into custom-1</button>
+        </div>
+      </div>
+
+      <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-content: start">
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <section style="position: relative; border-radius: 10px; border: 1px solid {{c.edge}}; background: {{c.glass}}; padding: 4px 14px 8px">
+            <span aria-hidden="true" style="position: absolute; left: -1px; top: -1px; width: 12px; height: 12px; border-left: 2px solid {{c.glow}}; border-top: 2px solid {{c.glow}}; border-top-left-radius: 10px"></span>
+            <span aria-hidden="true" style="position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-right: 2px solid {{c.glow}}; border-bottom: 2px solid {{c.glow}}; border-bottom-right-radius: 10px"></span>
+            <h2 style="margin: 0; padding: 8px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: {{c.glow}}; display: flex; align-items: center; gap: 8px">BACKGROUND<span style="flex: 1; height: 1px; background: {{c.edge}}"></span><span style="font-weight: 400; color: {{c.dim}}; letter-spacing: 0">[app.background]</span></h2>
+            <div role="radiogroup" aria-label="Background style" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding-bottom: 8px">
+              <sc-for list="{{styles}}" as="s" hint-placeholder-count="4">
+                <button type="button" role="radio" aria-checked="{{s.on}}" style="{{s.style}}"><span style="{{s.swatch}}"></span><span style="font-size: 10px">{{s.label}}</span></button>
+              </sc-for>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid {{c.edge}}">
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">gradient colours</span><span style="font-size: 10px; color: {{c.dim}}">top → bottom · used by “custom gradient”</span></span>
+              <button type="button" aria-label="Top colour" style="width: 30px; height: 26px; border-radius: 6px; border: 1px solid {{c.edge}}; background: {{c.bgTop}}"></button>
+              <span style="color: {{c.dim}}">→</span>
+              <button type="button" aria-label="Bottom colour" style="width: 30px; height: 26px; border-radius: 6px; border: 1px solid {{c.edge}}; background: {{c.bgBottom}}"></button>
+              <a href="#" style="font-size: 10px; color: {{c.glow}}">from theme</a>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid {{c.edge}}">
+              <label for="ao" style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">window opacity <span style="color: {{c.warn}}">★</span></span><span style="font-size: 10px; color: {{c.dim}}">see your wallpaper through the app</span></label>
+              <input id="ao" type="range" min="40" max="100" value="100" style="width: 120px; accent-color: {{c.glow}}">
+              <span style="width: 40px; text-align: right; font-weight: 700">100%</span>
+            </div>
+          </section>
+
+          <section style="position: relative; border-radius: 10px; border: 1px solid {{c.edge}}; background: {{c.glass}}; padding: 4px 14px 8px">
+            <span aria-hidden="true" style="position: absolute; left: -1px; top: -1px; width: 12px; height: 12px; border-left: 2px solid {{c.glow}}; border-top: 2px solid {{c.glow}}; border-top-left-radius: 10px"></span>
+            <span aria-hidden="true" style="position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-right: 2px solid {{c.glow}}; border-bottom: 2px solid {{c.glow}}; border-bottom-right-radius: 10px"></span>
+            <h2 style="margin: 0; padding: 8px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: {{c.glow}}; display: flex; align-items: center; gap: 8px">ATMOSPHERE<span style="flex: 1; height: 1px; background: {{c.edge}}"></span><span style="font-weight: 400; color: {{c.dim}}; letter-spacing: 0">[app.atmosphere]</span></h2>
+            <sc-for list="{{atmo}}" as="a" hint-placeholder-count="2">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid {{c.edge}}">
+                <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{a.label}}</span><span style="font-size: 10px; color: {{c.dim}}">{{a.hint}}</span></span>
+                <span style="width: 120px; height: 4px; border-radius: 2px; background: {{a.track}}; position: relative"><span style="{{a.knob}}"></span></span>
+                <span style="width: 40px; text-align: right; font-weight: 700">{{a.value}}</span>
+              </div>
+            </sc-for>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0">
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">drift</span><span style="font-size: 10px; color: {{c.dim}}">snow and light move slowly · off with reduce motion</span></span>
+              <button type="button" role="switch" aria-checked="true" aria-label="Drift" style="{{sw.track}}"><span style="{{sw.knob}}"></span></button>
+            </div>
+          </section>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <section style="position: relative; border-radius: 10px; border: 1px solid {{c.edge}}; background: {{c.glass}}; padding: 4px 14px 8px">
+            <span aria-hidden="true" style="position: absolute; left: -1px; top: -1px; width: 12px; height: 12px; border-left: 2px solid {{c.glow}}; border-top: 2px solid {{c.glow}}; border-top-left-radius: 10px"></span>
+            <span aria-hidden="true" style="position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-right: 2px solid {{c.glow}}; border-bottom: 2px solid {{c.glow}}; border-bottom-right-radius: 10px"></span>
+            <h2 style="margin: 0; padding: 8px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: {{c.glow}}; display: flex; align-items: center; gap: 8px">SURFACES &amp; GLOW<span style="flex: 1; height: 1px; background: {{c.edge}}"></span><span style="font-weight: 400; color: {{c.dim}}; letter-spacing: 0">[app.surface]</span></h2>
+            <sc-for list="{{surf}}" as="a" hint-placeholder-count="2">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid {{c.edge}}">
+                <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{a.label}}</span><span style="font-size: 10px; color: {{c.dim}}">{{a.hint}}</span></span>
+                <span style="width: 120px; height: 4px; border-radius: 2px; background: {{a.track}}; position: relative"><span style="{{a.knob}}"></span></span>
+                <span style="width: 40px; text-align: right; font-weight: 700">{{a.value}}</span>
+              </div>
+            </sc-for>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid {{c.edge}}">
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">glow colour</span><span style="font-size: 10px; color: {{c.dim}}">focus, selection, group corners</span></span>
+              <sc-for list="{{glows}}" as="g" hint-placeholder-count="3"><button type="button" aria-label="{{g.name}}" style="{{g.style}}"></button></sc-for>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0">
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">selected page</span><span style="font-size: 10px; color: {{c.dim}}">how the sidebar marks where you are</span></span>
+              <div role="radiogroup" aria-label="Selected page style" style="display: flex; gap: 5px">
+                <sc-for list="{{marks}}" as="m" hint-placeholder-count="3">
+                  <button type="button" role="radio" aria-checked="{{m.on}}" style="{{m.box}}"><span style="{{m.sample}}">pages</span><span style="font-size: 9px; color: {{c.dim}}">{{m.label}}</span></button>
+                </sc-for>
+              </div>
+            </div>
+          </section>
+
+          <section style="position: relative; border-radius: 10px; border: 1px solid {{c.edge}}; background: {{c.glass}}; padding: 4px 14px 8px">
+            <h2 style="margin: 0; padding: 8px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: {{c.glow}}; display: flex; align-items: center; gap: 8px">LAYOUT &amp; TEXT<span style="flex: 1; height: 1px; background: {{c.edge}}"></span></h2>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid {{c.edge}}">
+              <span style="flex: 1; font-weight: 500">density</span>
+              <div role="radiogroup" aria-label="Density" style="display: flex; padding: 2px; border-radius: 7px; border: 1px solid {{c.edge}}; background: {{c.deep}}">
+                <sc-for list="{{density}}" as="s" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{s.on}}" style="{{s.style}}">{{s.label}}</button></sc-for>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid {{c.edge}}">
+              <span style="flex: 1; font-weight: 500">font</span>
+              <button type="button" style="height: 26px; min-width: 170px; padding: 0 8px; border-radius: 7px; border: 1px solid {{c.edge}}; background: {{c.deep}}; color: {{c.text}}; font-size: 11px; display: flex; justify-content: space-between; align-items: center">JetBrains Mono<span>▾</span></button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0">
+              <span style="flex: 1; font-weight: 500">group corners</span>
+              <button type="button" role="switch" aria-checked="true" aria-label="Group corners" style="{{sw.track}}"><span style="{{sw.knob}}"></span></button>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <footer style="height: 24px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding-top: 6px; border-top: 1px solid {{c.edge}}; font-size: 10px; color: {{c.dim}}">
+        <span>next door: <a href="#" style="color: {{c.text}}">colours &amp; theme ›</a>  <a href="#" style="color: {{c.text}}">accessibility › reduce motion ›</a></span>
+        <span style="flex: 1"></span>
+        <span>this window is the preview · changes show instantly</span>
+      </footer>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["Abyssal Tide","Trench Violet","Kelp Forest","Ember Vent"],"default":"Abyssal Tide","section":"Theme"},"bgStyle":{"editor":"enum","options":["Theme gradient","Solid","Custom gradient","Wallpaper (blurred)"],"default":"Theme gradient","section":"App background"},"bgTop":{"editor":"color","default":"#16305a","options":["#16305a","#35245a","#14423a","#3f1d14"],"section":"App background"},"bgBottom":{"editor":"color","default":"#080b17","options":["#080b17","#0e0917","#06110f","#120a0a"],"section":"App background"},"shafts":{"editor":"range","min":0,"max":100,"step":5,"default":100,"unit":"%","section":"Atmosphere"},"snow":{"editor":"range","min":0,"max":100,"step":5,"default":80,"unit":"%","section":"Atmosphere"},"glass":{"editor":"range","min":0,"max":15,"step":1,"default":3,"unit":"%","section":"Surfaces"},"glowStrength":{"editor":"range","min":0,"max":40,"step":1,"default":15,"unit":"%","section":"Surfaces"},"glowFrom":{"editor":"enum","options":["Theme cyan","Theme accent","Theme rose"],"default":"Theme cyan","section":"Surfaces"},"$preview":{"width":1280,"height":840}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const T = {
+      'Abyssal Tide': { crust: '#080b17', base: '#0c1020', subtext: '#a3abcb', text: '#dde3f6', accent: '#a98bff', cyan: '#7fd6e6', rose: '#f28fb0', warn: '#f5c27a', top: '#16305a' },
+      'Trench Violet': { crust: '#0e0917', base: '#1b1328', subtext: '#c3b2d2', text: '#f1eaf7', accent: '#c5a5ef', cyan: '#94dbd7', rose: '#eea2c5', warn: '#f5c27a', top: '#35245a' },
+      'Kelp Forest': { crust: '#06110f', base: '#0a1916', subtext: '#9cc2b2', text: '#ddf2e8', accent: '#6fe0b4', cyan: '#7fd6e6', rose: '#f2b38f', warn: '#f5c27a', top: '#14423a' },
+      'Ember Vent': { crust: '#120a0a', base: '#1a0f0f', subtext: '#d1b3a8', text: '#f6e7e1', accent: '#ff9e6b', cyan: '#f5c27a', rose: '#ff7a95', warn: '#f5c27a', top: '#3f1d14' }
+    };
+    const t = T[this.props.theme] || T['Abyssal Tide'];
+    const bgStyle = this.props.bgStyle ?? 'Theme gradient';
+    const bgTop = this.props.bgTop ?? '#16305a', bgBottom = this.props.bgBottom ?? '#080b17';
+    const shafts = this.props.shafts ?? 100, snow = this.props.snow ?? 80, glass = this.props.glass ?? 3, gs = this.props.glowStrength ?? 15;
+    const glowFrom = this.props.glowFrom ?? 'Theme cyan';
+    const glow = glowFrom === 'Theme accent' ? t.accent : glowFrom === 'Theme rose' ? t.rose : t.cyan;
+    const hex2 = (n) => ('0' + Math.max(0, Math.min(255, Math.round(n))).toString(16)).slice(-2);
+    const bg = {
+      'Theme gradient': 'linear-gradient(180deg, ' + t.top + ' 0%, ' + t.base + ' 38%, ' + t.crust + ' 100%)',
+      'Solid': t.base,
+      'Custom gradient': 'linear-gradient(180deg, ' + bgTop + ' 0%, ' + bgBottom + ' 100%)',
+      'Wallpaper (blurred)': 'radial-gradient(ellipse at 25% 15%, ' + t.accent + '55, transparent 55%), radial-gradient(ellipse at 80% 70%, ' + t.cyan + '33, transparent 50%), linear-gradient(160deg, ' + t.top + ', ' + t.crust + ')'
+    };
+    const c = {
+      text: t.text, dim: t.subtext, glow, warn: t.warn, bgTop, bgBottom,
+      water: bg[bgStyle] || bg['Theme gradient'],
+      shafts: 'linear-gradient(104deg, transparent 34%, ' + glow + '0b 40%, transparent 46%, transparent 60%, ' + glow + '0e 66%, transparent 73%), radial-gradient(ellipse 60% 30% at 62% -6%, ' + glow + '22, transparent 70%)',
+      snow: 'radial-gradient(circle at 30px 40px, ' + t.text + '50 0 1px, transparent 1.6px), radial-gradient(circle at 150px 100px, ' + t.text + '38 0 1px, transparent 1.6px), radial-gradient(circle at 90px 150px, ' + glow + '40 0 1.2px, transparent 1.8px)',
+      shaftOp: shafts / 100, snowOp: snow / 100,
+      bar: t.crust + 'cc', side: t.crust + '66', glass: t.text + hex2(glass * 2.55), deep: t.crust + 'b3', edge: t.text + '17',
+      glowSoft: glow + hex2(gs * 2.55), glowEdge: glow + '55'
+    };
+    const item = (label, on, star) => ({
+      label, star: star ? '★' : '',
+      style: 'display: flex; align-items: center; gap: 10px; height: 26px; padding: 0 10px; border-radius: 0 7px 7px 0; text-decoration: none; font-size: 12px; '
+        + (on ? 'background: linear-gradient(90deg, ' + c.glowSoft + ', transparent 85%); color: ' + glow + '; font-weight: 700; box-shadow: inset 2px 0 0 ' + glow : 'color: ' + c.dim + '; box-shadow: inset 1px 0 0 ' + c.edge)
+    });
+    const styleCard = (label) => ({
+      label, on: label === bgStyle ? 'true' : 'false',
+      swatch: 'height: 34px; border-radius: 5px; background: ' + bg[label] + '; box-shadow: inset 0 0 0 1px ' + c.edge,
+      style: 'padding: 5px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px; color: ' + c.text + '; background: ' + c.deep + '; '
+        + (label === bgStyle ? 'border: 1px solid ' + glow + '; box-shadow: 0 0 12px ' + c.glowSoft : 'border: 1px solid ' + c.edge)
+    });
+    const slide = (label, hint, v, max, shown) => ({
+      label, hint, value: shown,
+      track: 'linear-gradient(90deg, ' + glow + ' ' + (v / max * 100) + '%, ' + c.edge + ' ' + (v / max * 100) + '%)',
+      knob: 'position: absolute; top: -5px; left: calc(' + (v / max * 100) + '% - 7px); width: 14px; height: 14px; border-radius: 50%; background: ' + t.text + '; box-shadow: 0 0 0 2px ' + t.crust
+    });
+    const glowSw = (name, col) => ({
+      name, style: 'width: 22px; height: 22px; border-radius: 50%; padding: 0; background: ' + col + '; border: 2px solid ' + (col === glow ? t.text : 'transparent') + '; ' + (col === glow ? 'box-shadow: 0 0 10px ' + col : '')
+    });
+    const mark = (label, on, sample) => ({ label, on: on ? 'true' : 'false', sample: 'font-size: 10px; padding: 3px 8px; ' + sample,
+      box: 'padding: 5px 6px; border-radius: 7px; display: flex; flex-direction: column; align-items: center; gap: 3px; background: ' + c.deep + '; color: ' + c.text + '; border: 1px solid ' + (on ? glow : c.edge) });
+    const seg = (label, on) => ({ label, on: on ? 'true' : 'false',
+      style: 'height: 22px; padding: 0 9px; border: 0; border-radius: 5px; font-size: 11px; ' + (on ? 'background: ' + glow + '; color: ' + t.crust + '; font-weight: 700' : 'background: transparent; color: ' + c.dim) });
+    return {
+      c,
+      sw: {
+        track: 'width: 34px; height: 20px; flex-shrink: 0; border-radius: 10px; border: 1px solid ' + glow + '; padding: 2px; display: flex; justify-content: flex-end; background: ' + c.glowSoft,
+        knob: 'width: 14px; height: 14px; border-radius: 50%; background: ' + glow + '; box-shadow: 0 0 8px ' + glow
+      },
+      halls: [
+        { title: 'LOOK', items: [item('colours & theme'), item('this app', true, true), item('wallpaper'), item('fonts'), item('panels'), item('lock screen')] },
+        { title: 'DESKTOP', items: [item('windows'), item('workspaces'), item('animations'), item('keyboard')] },
+        { title: 'SYSTEM', items: [item('sound'), item('network'), item('accessibility'), item('updates')] }
+      ],
+      styles: ['Theme gradient', 'Solid', 'Custom gradient', 'Wallpaper (blurred)'].map(styleCard),
+      atmo: [
+        slide('light shafts', 'beams from the surface', shafts, 100, shafts + '%'),
+        slide('marine snow', 'drifting specks behind everything', snow, 100, snow + '%')
+      ],
+      surf: [
+        slide('glass', 'how visible the group panels are', glass, 15, glass + '%'),
+        slide('glow strength', 'selection and focus light', gs, 40, gs + '%')
+      ],
+      glows: [glowSw('Theme cyan', t.cyan), glowSw('Theme accent', t.accent), glowSw('Theme rose', t.rose)],
+      marks: [
+        mark('lit edge', true, 'background: linear-gradient(90deg, ' + c.glowSoft + ', transparent); box-shadow: inset 2px 0 0 ' + glow + '; color: ' + glow),
+        mark('filled', false, 'background: ' + glow + '; color: ' + t.crust + '; border-radius: 4px'),
+        mark('underline', false, 'border-bottom: 1px solid ' + glow + '; color: ' + glow)
+      ],
+      density: [seg('compact'), seg('normal', true), seg('roomy')]
+    };
+  }
+}
+</script>
+</body>
+</html>

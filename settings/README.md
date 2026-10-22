@@ -8,7 +8,7 @@ picker use the running shell's IPC; configuration edits also work offline.
 
 Requires CMake, a C++17 compiler, Qt 6 Quick, Quick Controls 2 and Network.
 Qt Test is needed when BUILD_TESTING is enabled. Runtime QML modules include
-QtQuick.Dialogs. TideWM's `wavefmt` must be on PATH to apply Wave edits;
+QtQuick.Dialogs and QtQuick.Effects. TideWM's `wavefmt` must be on PATH to apply Wave edits;
 without it the app refuses those writes. It checks syntax, not action semantics.
 
 ```sh
@@ -24,6 +24,14 @@ menu gear and app launcher also open the app. A lock/socket pair reuses the
 existing app instead of opening duplicates. No monitor name is compiled in.
 
 ## What works
+
+The Drowned archive interface follows the active theme throughout. **Look › This
+app** (Ctrl+,) previews the water gradient or blurred image wallpaper, atmosphere,
+glass, glow, density, installed font and selection style. Reduced motion freezes
+the atmosphere. App preferences use `abyssal/settings.json`; preview changes
+stay in a draft until Apply. Reset preserves unknown keys and custom themes can
+store an app look. The eleven original pages remain available.
+
 
 - Theme selection, editable theme copies, colour pickers, opacity and rounding.
 - Wallpaper selection per detected output, transition recipes and duration.
@@ -45,6 +53,11 @@ writes are rolled back when they still match this app's write. Other edits are
 not overwritten during rollback. Reload/close asks before discarding drafts.
 
 ## Next development
+
+The registry, per-setting search, undo/live apply, expanded inventory and managed
+TideWM include pipeline are subsequent stages of the approved specification.
+Window geometry persistence and pin-on-top are not implemented yet.
+
 
 Build native panel/widget forms around the existing widget schemas; add dedicated
 TideWM display, input, animation and window-rule pages; improve keybind recording

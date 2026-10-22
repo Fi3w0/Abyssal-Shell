@@ -1,5 +1,6 @@
 #include "ConfigStore.h"
 #include <QCoreApplication>
+#include <QColor>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
@@ -82,7 +83,7 @@ void ConfigStore::loadWave(QString path, int depth) {
 void ConfigStore::reload() {
   m_docs.clear();
   for (QString id : {"appearance", "wallpaper", "layout", "updates", "idle",
-                     "notifications", "profile", "autostart"})
+                     "notifications", "profile", "autostart", "settings"})
     load(id, id.left(1).toUpper() + id.mid(1),
          m_home + "/abyssal/" + id + ".json");
   QDir shipped(m_root + "/themes"), user(m_home + "/abyssal/themes");
@@ -169,6 +170,21 @@ void ConfigStore::setText(QString id, QString t) {
     m_docs[id].draft = t;
     emit changed();
   }
+}
+void ConfigStore::resetAppLook() {
+  QJsonParseError error;
+  const auto parsed = QJsonDocument::fromJson(m_docs["settings"].draft.toUtf8(), &error);
+  if (error.error != QJsonParseError::NoError || !parsed.isObject()) {
+    report("Fix the settings JSON syntax before resetting the app's look.");
+    return;
+  }
+  auto object = parsed.object();
+  for (const auto &key : {"backgroundStyle", "backgroundTop", "backgroundBottom",
+                          "windowOpacity", "shafts", "snow", "drift", "glass",
+                          "glowStrength", "glowSource", "selectionStyle", "density",
+                          "font", "corners", "reduceMotion"})
+    object.remove(key);
+  setText("settings", QString::fromUtf8(QJsonDocument(object).toJson()));
 }
 QVariantList ConfigStore::themes() const {
   QVariantList list;
@@ -375,6 +391,29 @@ bool ConfigStore::validate(const Document &d, QString &error) const {
     } else if (d.id == "appearance") {
       booleans = {"mono", "fromWallpaper"};
       strings = {"theme", "preset"};
+    } else if (d.id == "settings") {
+      if (!number("windowOpacity", 40, 100, false) ||
+          !number("shafts", 0, 100, false) || !number("snow", 0, 100, false) ||
+          !number("glass", 0, 15, false) || !number("glowStrength", 0, 40, false))
+        return false;
+      const QMap<QString, QStringList> options{
+          {"backgroundStyle", {"theme", "solid", "custom", "wallpaper"}},
+          {"glowSource", {"cyan", "accent", "rose"}},
+          {"selectionStyle", {"edge", "filled", "underline"}},
+          {"density", {"compact", "normal", "roomy"}}};
+      for (auto it = options.cbegin(); it != options.cend(); ++it)
+        if (o.contains(it.key()) && !it.value().contains(o[it.key()].toString())) {
+          error = "Invalid " + it.key() + " in " + d.label;
+          return false;
+        }
+      for (const auto &key : {"backgroundTop", "backgroundBottom"})
+        if (o.contains(key) &&
+            (!o[key].isString() || !QColor(o[key].toString()).isValid())) {
+          error = "Invalid background colour in " + d.label;
+          return false;
+        }
+      booleans = {"drift", "corners", "reduceMotion"};
+      strings = {"font"};
     } else if (d.id == "profile")
       strings = {"displayName", "avatar"};
     else if (d.id == "wallpaper") {

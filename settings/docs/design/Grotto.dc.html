@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Abyssal Settings — Drowned archive</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;0,800;1,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit}a:hover{opacity:.85}
+button{font:inherit;cursor:pointer}
+input{font:inherit}
+</style>
+</helmet>
+<div style="width: 1280px; height: 840px; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'JetBrains Mono', monospace; font-size: 12px; background: {{c.water}}; color: {{c.text}}; border-radius: 12px; border: 1px solid {{c.edge}}; overflow: hidden; position: relative">
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: {{c.shafts}}; pointer-events: none; opacity: {{c.shaftOp}}"></div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: {{c.snow}}; background-size: 210px 170px; pointer-events: none; opacity: {{c.snowOp}}"></div>
+
+  <header style="height: 38px; flex-shrink: 0; position: relative; display: flex; align-items: center; gap: 12px; padding: 0 10px 0 14px; border-bottom: 1px solid {{c.edge}}; background: {{c.bar}}">
+
+    <span style="font-weight: 700; letter-spacing: .5px">abyssal</span><span style="color: {{c.dim}}">·</span><span style="color: {{c.dim}}">settings — windows &amp; workspaces</span>
+    <span style="flex: 1"></span>
+    <button type="button" style="height: 26px; padding: 0 10px; border: 1px solid {{c.warn}}; border-radius: 6px; background: transparent; color: {{c.glow}}; font-size: 11px; display: flex; align-items: center; gap: 6px; border-color: {{c.glowEdge}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10a6 6 0 0 1 0 12h-3"></path></svg>undo ‹gaps 12→8›</button>
+    <span aria-hidden="true" style="width: 1px; height: 18px; background: {{c.edge}}"></span>
+    <button type="button" aria-label="Pin on top" style="width: 28px; height: 26px; border: 0; background: transparent; color: {{c.dim}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 17v5M8 3h8l-1 7 3 4H6l3-4z"></path></svg></button>
+    <button type="button" aria-label="Minimize" style="width: 28px; height: 26px; border: 0; background: transparent; color: {{c.dim}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 18h14"></path></svg></button>
+    <button type="button" aria-label="Close" style="width: 28px; height: 26px; border: 0; background: transparent; color: {{c.dim}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+  </header>
+
+  <div style="flex: 1; min-height: 0; display: flex; position: relative">
+    <nav aria-label="Settings sections" style="width: 262px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px 12px; box-sizing: border-box; border-right: 1px solid {{c.edge}}; background: {{c.side}}">
+      <a href="#" style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; border: 1px solid {{c.edge}}; background: {{c.glass}}; text-decoration: none; position: relative">
+        <span style="width: 38px; height: 38px; flex-shrink: 0; border-radius: 8px; background: {{c.glowSoft}}; border: 1px solid {{c.glow}}; display: flex; align-items: center; justify-content: center"></span>
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-weight: 700; font-size: 12px">[your name]</span><span style="font-size: 11px; color: {{c.dim}}">account · {{c.name}}</span></span>
+      </a>
+      <label style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid {{c.glow}}; background: {{c.deep}}; color: {{c.dim}}; box-shadow: 0 0 14px {{c.glowSoft}}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input type="search" placeholder="search…" aria-label="Search settings" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: {{c.text}}; font-size: 12px">
+        <span style="font-size: 10px; padding: 1px 5px; border: 1px solid {{c.edge}}; border-radius: 4px">^F</span>
+      </label>
+      <div style="display: flex; flex-direction: column; gap: 1px; overflow: hidden">
+        <sc-for list="{{halls}}" as="h" hint-placeholder-count="4">
+          <div style="display: flex; align-items: center; gap: 6px; padding: 10px 4px 4px; font-size: 10px; letter-spacing: 2px; color: {{c.dim}}">{{h.title}}<span style="flex: 1; height: 1px; background: {{c.edge}}"></span></div>
+          <sc-for list="{{h.items}}" as="it" hint-placeholder-count="3">
+            <a href="#" style="{{it.style}}">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{it.icon}}"></path></svg>
+              <span style="flex: 1">{{it.label}}</span>
+              <span style="color: {{c.warn}}; font-size: 11px">{{it.star}}</span>
+              <span style="color: {{c.dim}}; font-size: 10px">{{it.count}}</span>
+            </a>
+          </sc-for>
+        </sc-for>
+      </div>
+
+    </nav>
+
+    <main style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px 22px 12px; box-sizing: border-box">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px">
+        <div style="display: flex; flex-direction: column; gap: 5px">
+          <span style="font-size: 11px; color: {{c.dim}}">desktop <span style="color: {{c.glow}}">›</span> windows &amp; workspaces</span>
+          <h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.5px">Windows <span style="color: {{c.glow}}">&amp;</span> workspaces</h1>
+          <span style="font-size: 11px; color: {{c.dim}}">How TideWM lays out your windows. Applied live, validated before it’s written.</span>
+        </div>
+        <div role="radiogroup" aria-label="Layout engine" style="display: flex; gap: 6px">
+          <sc-for list="{{engines}}" as="e" hint-placeholder-count="3">
+            <button type="button" role="radio" aria-checked="{{e.on}}" style="{{e.style}}">
+              <span style="width: 64px; height: 30px; display: flex; gap: 3px; align-items: stretch"><span style="{{e.a}}"></span><span style="{{e.b}}"></span><span style="{{e.d}}"></span></span>
+              <span style="font-size: 11px; font-weight: 700">{{e.label}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-content: start">
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <section style="position: relative; border-radius: 10px; border: 1px solid {{c.edge}}; background: {{c.glass}}; padding: 4px 14px 6px">
+            <span aria-hidden="true" style="position: absolute; left: -1px; top: -1px; width: 12px; height: 12px; border-left: 2px solid {{c.glow}}; border-top: 2px solid {{c.glow}}; border-top-left-radius: 10px"></span>
+            <span aria-hidden="true" style="position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-right: 2px solid {{c.glow}}; border-bottom: 2px solid {{c.glow}}; border-bottom-right-radius: 10px"></span>
+            <h2 style="margin: 0; padding: 8px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: {{c.glow}}; display: flex; align-items: center; gap: 8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h4v14H3zM10 5h8v14h-8zM21 5v14"></path></svg>SCROLL<span style="flex: 1; height: 1px; background: {{c.edge}}"></span><span style="font-weight: 400; color: {{c.dim}}; letter-spacing: 0">[layout.scroll]</span></h2>
+
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0">
+              <label for="gw" style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">column width <span style="color: {{c.warn}}">★</span></span><span style="font-size: 10px; color: {{c.dim}}">share of the screen a new app gets</span></label>
+              <input id="gw" type="range" min="10" max="100" value="94" style="width: 130px; accent-color: {{c.glow}}">
+              <span style="width: 42px; text-align: right; font-weight: 700; color: {{c.glow}}">94%</span>
+            </div>
+            <div style="position: relative; height: 64px; margin-bottom: 6px; border-radius: 8px; border: 1px solid {{c.edge}}; background: {{c.deep}}; overflow: hidden; display: flex; align-items: stretch; gap: 5px; padding: 8px 8px 18px; box-sizing: border-box" aria-label="Looping preview of the column width">
+              <span style="flex: 0 0 16px; border-radius: 4px; border: 1px solid {{c.edge}}; background: {{c.glass}}"></span>
+              <span style="flex: 1; border-radius: 5px; border: 1px solid {{c.glow}}; background: {{c.glowSoft}}; box-shadow: 0 0 16px {{c.glowSoft}}"></span>
+              <span style="flex: 0 0 16px; border-radius: 4px; border: 1px solid {{c.edge}}; background: {{c.glass}}"></span>
+              <span style="position: absolute; left: 8px; bottom: 3px; font-size: 9px; color: {{c.dim}}">preview.loop — neighbours peek at the edges</span>
+              <button type="button" aria-label="Close preview" style="position: absolute; right: 4px; bottom: 1px; border: 0; background: transparent; color: {{c.dim}}; font-size: 11px">×</button>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid {{c.edge}}">
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">center focused</span><span style="font-size: 10px; color: {{c.dim}}">when moving between columns</span></span>
+              <div role="radiogroup" aria-label="Center focused column" style="display: flex; padding: 2px; border-radius: 7px; border: 1px solid {{c.edge}}; background: {{c.deep}}">
+                <sc-for list="{{center}}" as="s" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{s.on}}" style="{{s.style}}">{{s.label}}</button></sc-for>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid {{c.edge}}">
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">preset widths</span><span style="font-size: 10px; color: {{c.dim}}">cycled by mod+R</span></span>
+              <sc-for list="{{presets}}" as="p" hint-placeholder-count="3"><span style="height: 24px; padding: 0 8px; border-radius: 6px; border: 1px solid {{c.edge}}; background: {{c.deep}}; display: flex; align-items: center; font-size: 11px">{{p}}</span></sc-for>
+              <button type="button" aria-label="Add preset width" style="width: 24px; height: 24px; border-radius: 6px; border: 1px dashed {{c.dim}}; background: transparent; color: {{c.dim}}">+</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid {{c.edge}}">
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">center a lone column</span><span style="font-size: 10px; color: {{c.dim}}">one window alone sits in the middle</span></span>
+              <button type="button" role="switch" aria-checked="true" aria-label="Center a lone column" style="{{sw.on}}"><span style="{{sw.knobOn}}"></span></button>
+            </div>
+          </section>
+
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: {{c.dim}}">
+            <span>next door:</span>
+            <a href="#" style="display: flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 6px; border: 1px solid {{c.edge}}; background: {{c.glass}}; text-decoration: none; color: {{c.text}}">⌨ keyboard › scroll binds ›</a>
+            <a href="#" style="display: flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 6px; border: 1px solid {{c.edge}}; background: {{c.glass}}; text-decoration: none; color: {{c.text}}">▭ panels › workspaces ›</a>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <section style="position: relative; border-radius: 10px; border: 1px solid {{c.edge}}; background: {{c.glass}}; padding: 4px 14px 6px">
+            <span aria-hidden="true" style="position: absolute; left: -1px; top: -1px; width: 12px; height: 12px; border-left: 2px solid {{c.glow}}; border-top: 2px solid {{c.glow}}; border-top-left-radius: 10px"></span>
+            <span aria-hidden="true" style="position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-right: 2px solid {{c.glow}}; border-bottom: 2px solid {{c.glow}}; border-bottom-right-radius: 10px"></span>
+            <h2 style="margin: 0; padding: 8px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: {{c.glow}}; display: flex; align-items: center; gap: 8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><rect x="8" y="8" width="8" height="8" rx="1"></rect></svg>GAPS &amp; BORDERS<span style="flex: 1; height: 1px; background: {{c.edge}}"></span><span style="font-weight: 400; color: {{c.dim}}; letter-spacing: 0">[decoration]</span></h2>
+            <sc-for list="{{steppers}}" as="st" hint-placeholder-count="2">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid {{c.edge}}">
+                <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{st.label}}</span><span style="font-size: 10px; color: {{c.dim}}">{{st.hint}}</span></span>
+                <div style="display: flex; align-items: center; border-radius: 7px; border: 1px solid {{c.edge}}; background: {{c.deep}}">
+                  <button type="button" aria-label="{{st.less}}" style="width: 26px; height: 26px; border: 0; background: transparent; color: {{c.dim}}">−</button>
+                  <span style="width: 44px; text-align: center; font-weight: 700">{{st.value}}</span>
+                  <button type="button" aria-label="{{st.more}}" style="width: 26px; height: 26px; border: 0; background: transparent; color: {{c.dim}}">+</button>
+                </div>
+              </div>
+            </sc-for>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid {{c.edge}}">
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">focus ring</span><span style="font-size: 10px; color: {{c.dim}}">glow around the active window</span></span>
+              <div style="display: flex; gap: 5px">
+                <sc-for list="{{rings}}" as="r" hint-placeholder-count="4"><button type="button" aria-label="{{r.name}}" style="{{r.style}}"></button></sc-for>
+              </div>
+              <button type="button" role="switch" aria-checked="true" aria-label="Focus ring" style="{{sw.on}}"><span style="{{sw.knobOn}}"></span></button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0">
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">corner radius</span><span style="font-size: 10px; color: {{c.dim}}">follows the theme unless set</span></span>
+              <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: {{c.glowSoft}}; color: {{c.glow}}">theme</span>
+              <span style="font-weight: 700; width: 36px; text-align: right">12px</span>
+            </div>
+          </section>
+
+          <section style="position: relative; border-radius: 10px; border: 1px solid {{c.edge}}; background: {{c.glass}}; padding: 4px 14px 6px">
+            <span aria-hidden="true" style="position: absolute; left: -1px; top: -1px; width: 12px; height: 12px; border-left: 2px solid {{c.glow}}; border-top: 2px solid {{c.glow}}; border-top-left-radius: 10px"></span>
+            <span aria-hidden="true" style="position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-right: 2px solid {{c.glow}}; border-bottom: 2px solid {{c.glow}}; border-bottom-right-radius: 10px"></span>
+            <h2 style="margin: 0; padding: 8px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: {{c.glow}}; display: flex; align-items: center; gap: 8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12c3-5 6-5 9 0s6 5 9 0"></path></svg>MOTION<span style="flex: 1; height: 1px; background: {{c.edge}}"></span><span style="font-weight: 400; color: {{c.dim}}; letter-spacing: 0">[animations]</span></h2>
+            <sc-for list="{{drops}}" as="d" hint-placeholder-count="2">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid {{c.edge}}">
+                <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{d.label}} <span style="color: {{c.warn}}">{{d.star}}</span></span><span style="font-size: 10px; color: {{c.dim}}">{{d.hint}}</span></span>
+                <button type="button" style="height: 26px; min-width: 150px; padding: 0 8px; border-radius: 7px; border: 1px solid {{c.edge}}; background: {{c.deep}}; color: {{c.text}}; font-size: 11px; display: flex; align-items: center; justify-content: space-between; gap: 8px">{{d.value}}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+              </div>
+            </sc-for>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 0">
+              <label for="gs" style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">speed</span><span style="font-size: 10px; color: {{c.dim}}">0 turns animations off</span></label>
+              <input id="gs" type="range" min="0" max="200" value="100" style="width: 130px; accent-color: {{c.glow}}">
+              <span style="width: 42px; text-align: right; font-weight: 700">1.0×</span>
+            </div>
+          </section>
+
+          <button type="button" style="display: flex; align-items: center; justify-content: space-between; height: 34px; padding: 0 14px; border-radius: 10px; border: 1px dashed {{c.edge}}; background: transparent; color: {{c.dim}}; font-size: 11px"><span>more… <span style="color: {{c.text}}">struts, hot corners, focus-follows-mouse, warp</span></span><span>6 ▾</span></button>
+        </div>
+      </div>
+
+      <footer style="height: 24px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding-top: 6px; border-top: 1px solid {{c.edge}}; font-size: 10px; color: {{c.dim}}">
+        <span style="display: flex; align-items: center; gap: 6px"><span style="color: {{c.ok}}">✓</span>saved 2s ago</span>
+        <span>~/.config/tidewm/config.toml</span>
+        <span>validated · 0 warnings</span>
+        <span style="flex: 1"></span>
+        <span>^Z undo · ^F search · esc back</span>
+      </footer>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["Abyssal Tide","Trench Violet","Kelp Forest","Ember Vent"],"default":"Abyssal Tide","section":"Theme"},"bgStyle":{"editor":"enum","options":["Theme gradient","Solid","Custom gradient","Wallpaper (blurred)"],"default":"Theme gradient","section":"App background"},"bgTop":{"editor":"color","default":"#16305a","options":["#16305a","#35245a","#14423a","#3f1d14"],"section":"App background"},"bgBottom":{"editor":"color","default":"#080b17","options":["#080b17","#0e0917","#06110f","#120a0a"],"section":"App background"},"shafts":{"editor":"range","min":0,"max":100,"step":5,"default":100,"unit":"%","section":"Atmosphere"},"snow":{"editor":"range","min":0,"max":100,"step":5,"default":80,"unit":"%","section":"Atmosphere"},"glass":{"editor":"range","min":0,"max":15,"step":1,"default":3,"unit":"%","section":"Surfaces"},"glowStrength":{"editor":"range","min":0,"max":40,"step":1,"default":15,"unit":"%","section":"Surfaces"},"$preview":{"width":1280,"height":840}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const T = {
+      'Abyssal Tide': { crust: '#080b17', base: '#0c1020', surface0: '#161b2e', subtext: '#a3abcb', text: '#dde3f6', accent: '#a98bff', cyan: '#7fd6e6', warn: '#f5c27a', ok: '#8be0b0', top: '#16305a' },
+      'Trench Violet': { crust: '#0e0917', base: '#1b1328', surface0: '#291c3b', subtext: '#c3b2d2', text: '#f1eaf7', accent: '#c5a5ef', cyan: '#94dbd7', warn: '#f5c27a', ok: '#8be0b0', top: '#35245a' },
+      'Kelp Forest': { crust: '#06110f', base: '#0a1916', surface0: '#12261f', subtext: '#9cc2b2', text: '#ddf2e8', accent: '#6fe0b4', cyan: '#7fd6e6', warn: '#f5c27a', ok: '#8be0b0', top: '#14423a' },
+      'Ember Vent': { crust: '#120a0a', base: '#1a0f0f', surface0: '#2a1916', subtext: '#d1b3a8', text: '#f6e7e1', accent: '#ff9e6b', cyan: '#f5c27a', warn: '#f5c27a', ok: '#a8d98b', top: '#3f1d14' }
+    };
+    const name = T[this.props.theme] ? this.props.theme : 'Abyssal Tide';
+    const t = T[name];
+    const bgStyle = this.props.bgStyle ?? 'Theme gradient';
+    const hex2 = (n) => ('0' + Math.max(0, Math.min(255, Math.round(n))).toString(16)).slice(-2);
+    const c = {
+      name: name.toLowerCase(), text: t.text, dim: t.subtext, glow: t.cyan, accent: t.accent, warn: t.warn, ok: t.ok,
+      water: bgStyle === 'Solid' ? t.base
+        : bgStyle === 'Custom gradient' ? 'linear-gradient(180deg, ' + (this.props.bgTop ?? '#16305a') + ' 0%, ' + (this.props.bgBottom ?? '#080b17') + ' 100%)'
+        : bgStyle === 'Wallpaper (blurred)' ? 'radial-gradient(ellipse at 25% 15%, ' + t.accent + '55, transparent 55%), radial-gradient(ellipse at 80% 70%, ' + t.cyan + '33, transparent 50%), linear-gradient(160deg, ' + t.top + ', ' + t.crust + ')'
+        : 'linear-gradient(180deg, ' + t.top + ' 0%, ' + t.base + ' 38%, ' + t.crust + ' 100%)',
+      shaftOp: (this.props.shafts ?? 100) / 100, snowOp: (this.props.snow ?? 80) / 100,
+      shafts: 'linear-gradient(104deg, transparent 34%, ' + t.cyan + '0b 40%, transparent 46%, transparent 60%, ' + t.cyan + '0e 66%, transparent 73%), radial-gradient(ellipse 60% 30% at 62% -6%, ' + t.cyan + '22, transparent 70%)',
+      snow: 'radial-gradient(circle at 30px 40px, ' + t.text + '50 0 1px, transparent 1.6px), radial-gradient(circle at 150px 100px, ' + t.text + '38 0 1px, transparent 1.6px), radial-gradient(circle at 90px 150px, ' + t.cyan + '40 0 1.2px, transparent 1.8px)',
+      bar: t.crust + 'cc', side: t.crust + '66', glass: t.text + hex2((this.props.glass ?? 3) * 2.55), deep: t.crust + 'b3', edge: t.text + '17',
+      glowSoft: t.cyan + hex2((this.props.glowStrength ?? 15) * 2.55), glowEdge: t.cyan + '55'
+    };
+    const gem = (on) => 'width: 6px; height: 6px; flex-shrink: 0; transform: rotate(45deg); ' + (on ? 'background: ' + c.glow + '; box-shadow: 0 0 8px ' + c.glow : 'border: 1px solid ' + c.edge);
+    const item = (label, icon, on, star, count) => ({
+      label, icon, star: star ? '★' : '', count: count || '', gem: gem(on),
+      style: 'display: flex; align-items: center; gap: 10px; height: 28px; padding: 0 10px; border-radius: 0 7px 7px 0; text-decoration: none; font-size: 12px; '
+        + (on ? 'background: linear-gradient(90deg, ' + c.glowSoft + ', transparent 85%); color: ' + c.glow + '; font-weight: 700; box-shadow: inset 2px 0 0 ' + c.glow + ', -6px 0 14px -6px ' + c.glow
+             : 'color: ' + c.dim + '; box-shadow: inset 1px 0 0 ' + c.edge)
+    });
+    const I = {
+      look: 'M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.6 0-1.3 1-2.4 2.4-2.4H18a3 3 0 0 0 3-3 9 9 0 0 0-9-9z',
+      wall: 'M4 5h16v14H4zM4 15l5-5 4 4 3-3 4 4',
+      panel: 'M3 5h18v4H3zM3 13h8v6H3zM15 13h6v6h-6z',
+      lock: 'M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4',
+      win: 'M3 4h8v16H3zM13 4h8v7h-8zM13 13h8v7h-8z',
+      key: 'M3 7h18v11H3zM7 11h.01M11 11h.01M15 11h.01M8 15h8',
+      disp: 'M3 4h18v12H3zM8 20h8M12 16v4',
+      mouse: 'M7 9a5 5 0 0 1 10 0v6a5 5 0 0 1-10 0zM12 4v5',
+      sound: 'M4 9v6h4l5 4V5L8 9zM17 9a4 4 0 0 1 0 6',
+      net: 'M2 9a15 15 0 0 1 20 0M5 13a10 10 0 0 1 14 0M8.5 16.5a5 5 0 0 1 7 0M12 20h.01',
+      bell: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4',
+      apps: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+      upd: 'M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5',
+      plug: 'M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4'
+    };
+    const box = (w, on) => 'flex: 0 0 ' + w + '; border-radius: 3px; ' + (on ? 'background: ' + c.glowSoft + '; border: 1px solid ' + c.glow : 'background: ' + c.glass + '; border: 1px solid ' + c.edge);
+    const engine = (label, on, a, b, d) => ({
+      label, a, b, d, on: on ? 'true' : 'false',
+      style: 'padding: 6px 8px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; color: ' + (on ? c.glow : c.dim) + '; background: ' + c.deep + '; '
+        + (on ? 'border: 1px solid ' + c.glow + '; box-shadow: 0 0 16px ' + c.glowSoft : 'border: 1px solid ' + c.edge)
+    });
+    const seg = (label, on) => ({
+      label, on: on ? 'true' : 'false',
+      style: 'height: 22px; padding: 0 9px; border: 0; border-radius: 5px; font-size: 11px; '
+        + (on ? 'background: ' + c.glow + '; color: ' + t.crust + '; font-weight: 700' : 'background: transparent; color: ' + c.dim)
+    });
+    const ring = (n, col, on) => ({
+      name: n,
+      style: 'width: 18px; height: 18px; border-radius: 50%; padding: 0; background: ' + col + '; border: 2px solid ' + (on ? c.text : 'transparent') + '; ' + (on ? 'box-shadow: 0 0 8px ' + col : '')
+    });
+    return {
+      c,
+      sw: {
+        on: 'width: 34px; height: 20px; flex-shrink: 0; border-radius: 10px; border: 1px solid ' + c.glow + '; padding: 2px; display: flex; justify-content: flex-end; background: ' + c.glowSoft,
+        knobOn: 'width: 14px; height: 14px; border-radius: 50%; background: ' + c.glow + '; box-shadow: 0 0 8px ' + c.glow
+      },
+      halls: [
+        { title: 'LOOK', items: [item('appearance', I.look), item('wallpaper', I.wall), item('panels', I.panel, false, true), item('lock screen', I.lock)] },
+        { title: 'DESKTOP', items: [item('windows', I.win, true, false, '24'), item('keyboard', I.key, false, false, '61'), item('displays', I.disp), item('mouse', I.mouse)] },
+        { title: 'SYSTEM', items: [item('sound', I.sound), item('network', I.net), item('notifications', I.bell, false, true), item('updates', I.upd, false, false, '3')] },
+        { title: 'EXTRA', items: [item('apps', I.apps), item('plugins', I.plug, false, true)] }
+      ],
+      engines: [
+        engine('classic', false, box('46%'), box('22%'), box('22%')),
+        engine('ocean', false, box('24%'), box('36%'), box('20%')),
+        engine('scroll', true, box('12%'), box('64%', true), box('12%'))
+      ],
+      center: [seg('never'), seg('if hidden'), seg('always', true)],
+      presets: ['33%', '50%', '67%'],
+      steppers: [
+        { label: 'inner gaps', hint: 'between windows', value: '8px', less: 'Smaller inner gaps', more: 'Bigger inner gaps' },
+        { label: 'outer gaps', hint: 'to the screen edge', value: '12px', less: 'Smaller outer gaps', more: 'Bigger outer gaps' }
+      ],
+      rings: [ring('Theme cyan', t.cyan, true), ring('Theme accent', t.accent), ring('Warm', t.warn), ring('Soft white', t.text)],
+      drops: [
+        { label: 'workspace switch', hint: 'played by TideWM', value: 'tide · 280ms', star: '★' },
+        { label: 'window open', hint: 'new windows rise in', value: 'surface · 220ms', star: '' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

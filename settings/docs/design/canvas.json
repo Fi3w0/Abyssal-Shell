@@ -1,0 +1,169 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Descent.dc.html": {
+      "h": 780,
+      "radius": 14,
+      "title": "I · Descent",
+      "w": 1200,
+      "x": 2560,
+      "y": 2600
+    },
+    "Dive.dc.html": {
+      "h": 780,
+      "radius": 6,
+      "title": "D · Dive console",
+      "w": 1200,
+      "x": 0,
+      "y": 1300
+    },
+    "Grotto.dc.html": {
+      "h": 840,
+      "radius": 12,
+      "title": "J · Drowned archive (G structure, I water)",
+      "w": 1280,
+      "x": 0,
+      "y": 3900
+    },
+    "Home.dc.html": {
+      "h": 780,
+      "radius": 18,
+      "title": "B · Home & search",
+      "w": 1200,
+      "x": 1280,
+      "y": 0
+    },
+    "Journal.dc.html": {
+      "h": 780,
+      "radius": 6,
+      "title": "E · Field journal",
+      "w": 1200,
+      "x": 1280,
+      "y": 1300
+    },
+    "Main.dc.html": {
+      "h": 780,
+      "radius": 18,
+      "title": "A · Sidebar — Windows & workspaces",
+      "w": 1200,
+      "x": 0,
+      "y": 0
+    },
+    "Preview.dc.html": {
+      "h": 780,
+      "radius": 18,
+      "title": "C · Live preview — Panels",
+      "w": 1200,
+      "x": 2560,
+      "y": 0
+    },
+    "Rack.dc.html": {
+      "h": 780,
+      "radius": 6,
+      "title": "F · Rack module",
+      "w": 1200,
+      "x": 2560,
+      "y": 1300
+    },
+    "Reef.dc.html": {
+      "h": 780,
+      "radius": 28,
+      "title": "H · Living reef",
+      "w": 1200,
+      "x": 1280,
+      "y": 2600
+    },
+    "Ruins.dc.html": {
+      "h": 780,
+      "radius": 10,
+      "title": "G · Sunken ruins",
+      "w": 1200,
+      "x": 0,
+      "y": 2600
+    },
+    "Colors.dc.html": {
+      "x": 1360,
+      "y": 3900,
+      "w": 1280,
+      "h": 840,
+      "title": "J2 · Colours & theme (custom palette)",
+      "radius": 12
+    },
+    "Map.dc.html": {
+      "x": 2720,
+      "y": 3900,
+      "w": 1280,
+      "h": 1180,
+      "title": "Settings map — what Abyssal should cover",
+      "radius": 12
+    },
+    "AppLook.dc.html": {
+      "x": 4080,
+      "y": 3900,
+      "w": 1280,
+      "h": 840,
+      "title": "J3 · Look › This app (settings app's own look)",
+      "radius": 12
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-22T03:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "heading": {
+      "kind": "title1",
+      "maxW": 3760,
+      "text": "Abyssal Settings — three directions",
+      "w": 240,
+      "x": 0,
+      "y": -260
+    },
+    "heading2": {
+      "kind": "title1",
+      "maxW": 3760,
+      "text": "Round 2 — settings with a personality",
+      "w": 240,
+      "x": 0,
+      "y": 1040
+    },
+    "heading3": {
+      "kind": "title1",
+      "maxW": 3760,
+      "text": "Round 3 — worlds from the abyss itself",
+      "w": 240,
+      "x": 0,
+      "y": 2340
+    },
+    "heading4": {
+      "kind": "title1",
+      "maxW": 3760,
+      "text": "Round 4 — G × I, detailed",
+      "w": 240,
+      "x": 0,
+      "y": 3640
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Home.dc.html",
+    "Preview.dc.html",
+    "Dive.dc.html",
+    "Journal.dc.html",
+    "Rack.dc.html",
+    "Ruins.dc.html",
+    "Reef.dc.html",
+    "Descent.dc.html",
+    "Grotto.dc.html",
+    "Colors.dc.html",
+    "Map.dc.html",
+    "AppLook.dc.html"
+  ],
+  "pages": [],
+  "title": "Abyssal Settings concepts"
+}

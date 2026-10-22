@@ -1,5 +1,6 @@
 {
   "name": "Kelp Forest",
+  "backdrop": { "top": "#14423a" },
   "shape": "pill",
   "mono": false,
   "glass": 0.74,
