@@ -59,6 +59,11 @@ int main(int argc, char **argv) {
   engine.load(QUrl("qrc:/qml/Main.qml"));
   if (engine.rootObjects().isEmpty())
     return 1;
+  auto settingsWindow = qobject_cast<QQuickWindow *>(engine.rootObjects().first());
+  const auto desktops = qEnvironmentVariable("XDG_CURRENT_DESKTOP").split(':');
+  settingsWindow->setProperty("hideOnMinimize",
+      desktops.contains("tidewm", Qt::CaseInsensitive) ||
+      qEnvironmentVariableIsSet("TIDEWM_SOCKET"));
   QObject::connect(&server, &QLocalServer::newConnection, &app, [&] {
     while (auto socket = server.nextPendingConnection()) {
       auto activate = [&, socket] {
@@ -71,9 +76,7 @@ int main(int argc, char **argv) {
           QMetaObject::invokeMethod(
               window, "openPage",
               Q_ARG(QVariant, QString::fromUtf8(request.mid(5))));
-        window->show();
-        window->raise();
-        window->requestActivate();
+        QMetaObject::invokeMethod(window, "restoreWindow");
         socket->disconnectFromServer();
       };
       QObject::connect(socket, &QLocalSocket::readyRead, socket, activate);

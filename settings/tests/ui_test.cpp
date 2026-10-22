@@ -120,6 +120,58 @@ private slots:
     QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join('\n')));
     window->hide();
   }
+  void minimizeAndRestore() {
+    warnings.clear();
+    write(config + "/abyssal/settings.json", R"({"reduceMotion":true})");
+    ConfigStore store(SETTINGS_SOURCE_ROOT);
+    QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("Store", &store);
+    engine.rootContext()->setContextProperty("initialPage", "windows");
+    engine.load(QUrl("qrc:/qml/Main.qml"));
+    QVERIFY(!engine.rootObjects().isEmpty());
+    auto window = qobject_cast<QQuickWindow *>(engine.rootObjects().first());
+    QVERIFY(window);
+    QTest::qWait(100);
+    auto button = findItem(window->contentItem(), "minimizeWindow");
+    QVERIFY(button);
+    store.setValue("settings", "fontSize", 14);
+    const auto dirty = store.dirtyCount();
+    QVERIFY(dirty > 0);
+    window->setProperty("hideOnMinimize", true);
+    auto clickMinimize = [&] {
+      QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                       button->mapToScene(button->boundingRect().center()).toPoint());
+    };
+    clickMinimize();
+    QTRY_VERIFY(!window->isVisible());
+    QCOMPARE(window->property("hiddenByMinimize").toBool(), true);
+    QVERIFY(QMetaObject::invokeMethod(window, "restoreWindow"));
+    QTRY_VERIFY(window->isVisible());
+    QCOMPARE(window->property("page").toString(), QString("windows"));
+    QCOMPARE(store.dirtyCount(), dirty);
+    QCOMPARE(store.value("settings", "fontSize").toInt(), 14);
+    // The offscreen platform accepts all requested window states. A real
+    // compositor may refuse maximization (e.g. a forced-floating test rule)
+    // or minimization; exercise those restoration paths deterministically.
+    if (QGuiApplication::platformName() != "offscreen") {
+      window->hide();
+      return;
+    }
+    window->showMaximized();
+    QTRY_COMPARE(window->visibility(), QWindow::Maximized);
+    QTest::qWait(50);
+    clickMinimize();
+    QTRY_VERIFY(!window->isVisible());
+    QVERIFY(QMetaObject::invokeMethod(window, "restoreWindow"));
+    QTRY_COMPARE(window->visibility(), QWindow::Maximized);
+    QCOMPARE(store.dirtyCount(), dirty);
+    window->setProperty("hideOnMinimize", false);
+    QVERIFY(QMetaObject::invokeMethod(window, "minimizeWindow"));
+    QTRY_COMPARE(window->visibility(), QWindow::Minimized);
+    QVERIFY(QMetaObject::invokeMethod(window, "restoreWindow"));
+    QTRY_VERIFY(window->isVisible());
+    window->hide();
+  }
   void desktopControls() {
     warnings.clear();
     const auto path = config + "/tidewm/config.wave";

@@ -43,6 +43,31 @@ ApplicationWindow {
     property var transitionProfiles: Store.transitions()
     property bool allowClose: false
     property bool closing: false
+    // TideWM has no minimized window state. Keep this session available through
+    // the existing launcher activation socket while its surface is hidden.
+    property bool hideOnMinimize: false
+    property bool hiddenByMinimize: false
+    property bool restoreMaximized: false
+    function minimizeWindow() {
+        if (hideOnMinimize) {
+            restoreMaximized = visibility === Window.Maximized;
+            hiddenByMinimize = true;
+            hide();
+        } else {
+            showMinimized();
+        }
+    }
+    function restoreWindow() {
+        if (hiddenByMinimize && restoreMaximized)
+            showMaximized();
+        else if (hiddenByMinimize || visibility === Window.Minimized)
+            showNormal();
+        else
+            show();
+        hiddenByMinimize = false;
+        raise();
+        requestActivate();
+    }
     property string documentId: "layout"
     readonly property var sections: [
         {
@@ -211,7 +236,7 @@ ApplicationWindow {
             WindowButton { symbol: "back"; text: "Back"; enabled: win.history.length > 0; onClicked: { const h = win.history.slice(); win.page = h.pop(); win.history = h; } }
             Label { text: "abyssal"; color: Theme.text; font.bold: true; font.letterSpacing: 0.5 }
             Label { text: "· settings — " + win.currentSection.title.toLowerCase(); color: Theme.subtext; font.pixelSize: 11; Layout.fillWidth: true; elide: Text.ElideRight }
-            WindowButton { symbol: "minimize"; text: "Minimize"; onClicked: win.showMinimized() }
+            WindowButton { objectName: "minimizeWindow"; symbol: "minimize"; text: win.hideOnMinimize ? "Minimize · reopen Settings to restore" : "Minimize"; onClicked: win.minimizeWindow() }
             WindowButton { symbol: win.visibility === Window.Maximized ? "restore" : "maximize"; text: win.visibility === Window.Maximized ? "Restore" : "Maximize"; onClicked: win.visibility === Window.Maximized ? win.showNormal() : win.showMaximized() }
             WindowButton { symbol: "close"; text: "Close"; destructive: true; onClicked: win.close() }
         }
