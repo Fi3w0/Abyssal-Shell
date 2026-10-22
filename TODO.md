@@ -43,6 +43,23 @@ looks): AngelOS-Dotfiles `modules/settings` (category tree in `tree.json`,
 pages built from small groups, search with synonyms, setup wizard in the
 same app).
 
+### TideWM side — what TideWM builds vs what Abyssal builds
+
+TideWM's own queue is `~/Documents/Proyects/TideWM/TODO.md`. This mirror
+says, per TideWM item, whether Abyssal needs any work. "TideWM only" means
+the shell builds nothing (binds go in the user's TideWM config, not here).
+
+| TideWM layer | TideWM builds | Abyssal builds |
+| --- | --- | --- |
+| 1 · niri column/window actions (set width/height, presets back, wrap focus, move column to index/workspace, floating↔tiling focus, urgent/inhibit/touchpad toggles, reload) | the actions | nothing; settings app may later offer a keybind editor that writes them |
+| 2 · monitor actions (focus/move window/column/workspace between monitors) | the actions | nothing (bind them in TideWM config) |
+| 3 · `pick-window`, `pick-color` | IPC requests | a colour-picker widget/launcher action using `tidectl pick-color`; window info in the switcher or a debug page via `pick-window` |
+| 4 · dynamic screencast target | portal source + actions | optional quick-settings tile to switch the shared window |
+| 5 · live overview | the overview itself | nothing; the panel's workspace widget can open it with `toggle-overview` |
+| 6 · more workspace animations | the styles | a picker in the settings app (Layer 1 step 5) |
+| Already shipped (0.90.166) · IPC geometry, `layers`, `focused-output`, output/mode/engine/scroll events | done | replace polling with `tidectl subscribe` (outputs, modes, Scroll strip); show a mode indicator; use `layers` in diagnostics |
+| Known TideWM bugs (screenshot cursor, `wl_surface.enter`) | the fixes | nothing; report anything else Abyssal hits to TideWM's TODO |
+
 ### Layer 1 — settings app rework (start here)
 
 Goal: a real settings app a user can live in instead of editing config,
