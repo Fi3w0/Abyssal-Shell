@@ -12,7 +12,7 @@ SettingGroup {
             root.revision++;
         }
     }
-    title: documentId === "settings" ? "this app" : documentId.replace("theme:", "theme · ")
+    title: documentId.startsWith("theme:") ? "Surfaces & shape" : ({settings: "This app", appearance: "Theme behaviour", wallpaper: "Transitions", updates: "Update checks", notifications: "Notifications", idle: "Idle & lock", profile: "Your profile"})[documentId] || "Preferences"
     configSection: documentId
     Repeater {
         model: root.fields
@@ -30,10 +30,11 @@ SettingGroup {
             value: {
                 root.revision;
                 const fallback = modelData.fallback === undefined ? "" : modelData.fallback;
-                return root.documentId === "settings" ? Theme.setting(modelData.key, fallback) : Store.value(root.documentId, modelData.key, fallback);
+                const v = root.documentId === "settings" ? Theme.setting(modelData.key, fallback) : Store.value(root.documentId, modelData.key, fallback);
+                return modelData.scale ? v * modelData.scale : v;
             }
             onEdited: next => {
-                Store.setValue(root.documentId, modelData.key, next);
+                Store.setValue(root.documentId, modelData.key, modelData.scale ? Math.round(next / modelData.scale) : next);
                 if (root.documentId === "wallpaper") {
                     if (modelData.key === "transitionPreset" && next) {
                         const recipe = Store.transitions()[next];

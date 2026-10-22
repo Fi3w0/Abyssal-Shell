@@ -23,4 +23,12 @@ private slots:
   void appLookUsesProtectedDrafts();
   void invalidAppLookIsBlocked();
   void resetAppLookPreservesUnknownKeys();
+  void desktopReadsIncludesInOrder();
+  void desktopDraftsPreserveAndApply();
+  void desktopInvalidAndExternalChanges();
+  void animationPresetsAndOverrides();
+  void accentIsSharedAndShippedThemeIsKept();
+  void externalChangesReloadWithoutLosingDrafts();
+  void deviceSettingsCanBeRestored();
+  void qmlObjectsAndArraysRemainStructured();
 };

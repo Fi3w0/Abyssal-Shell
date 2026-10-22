@@ -30,14 +30,17 @@ app** (Ctrl+,) previews the water gradient or blurred image wallpaper, atmospher
 glass, glow, density, installed font and selection style. Reduced motion freezes
 the atmosphere. App preferences use `abyssal/settings.json`; preview changes
 stay in a draft until Apply. Reset preserves unknown keys and custom themes can
-store an app look. The eleven original pages remain available.
+store an app look. The original features remain available. Desktop has graphical windows, motion
+and input pages; raw configuration editors are in Expert. Panels has controls
+and a preview, shortcuts record keys and choose actions/apps, and startup apps
+uses an installed-app picker. See docs/AUDIT.md for storage and scope.
 
 
 - Theme selection, editable theme copies, colour pickers, opacity and rounding.
 - Wallpaper selection per detected output, transition recipes and duration.
-- Panel overview and access to the existing live widget/panel editor.
-- Add/change single-line keybindings from config.wave and static Wave includes.
-- TideWM and JSON configuration editing, preserving comments and unknown keys.
+- Panel controls and preview, with access to the existing live widget editor.
+- Record/change single-line shortcuts from config.wave and static Wave includes.
+- Graphical TideWM settings plus Expert file editing, preserving comments and unknown keys.
 - Startup apps: add, enable/disable and remove. Additional apps are written to
   `abyssal-autostart.wave`, included from config.wave. Existing startup commands
   are preserved; apps launch on the next login, never when applying settings.
@@ -54,8 +57,8 @@ not overwritten during rollback. Reload/close asks before discarding drafts.
 
 ## Next development
 
-The registry, per-setting search, undo/live apply, expanded inventory and managed
-TideWM include pipeline are subsequent stages of the approved specification.
+The desktop registry and managed TideWM writes are implemented. Global per-setting
+search/recent searches, undo/live apply and the wider system inventory remain.
 Window geometry persistence and pin-on-top are not implemented yet.
 
 

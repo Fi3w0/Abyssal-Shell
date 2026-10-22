@@ -1,3 +1,35 @@
+# Settings revision — 2026-10-22
+
+The graphical desktop revision is implemented. Read AUDIT.md for the option
+inventory, backend ownership/precedence, validation and remaining limits.
+
+Added Windows & workspaces, Motion & effects and Keyboard & touchpad pages, with
+existing TideWM capabilities exposed through registry-driven controls. Raw Wave
+and JSON editors live only in Expert. Shortcuts record keys and choose actions or
+installed apps; Startup apps chooses installed applications. Panels now has
+native controls and a preview while retaining its graphical widget editor.
+
+Glow uses the shell's actual theme accent. The old glowSource preference is
+ignored for compatibility. Wallpaper-derived themes are resolved correctly, and
+editing the shared accent also updates the custom theme's active border/shadow.
+Header/footer and steppers were restyled, page-width clipping was corrected and
+avatars are masked to rounded edges. Notification duration is shown in seconds.
+QML object/array serialization is corrected so nested panel/widget and startup
+data are retained.
+
+Desktop persistence respects TideWM's parent-over-includes precedence. Selected
+parent keys/blocks are updated surgically; other preferences use an owned Wave
+include. Existing save protections remain. External config changes reload when
+safe and preserve drafts when there is a conflict. The launcher now uses the
+configured absolute installed executable path, fixing desktop/portal discovery
+when the portal's PATH lacks the user's local bin directory. Running instances
+receive page navigation requests.
+
+No TideWM source changes or package installations. No native compositor restart.
+Tests use temporary configurations and an isolated nested installed TideWM.
+
+---
+
 # Working handoff — 2026-10-22
 
 The Drowned archive foundation is implemented on top of the existing application.

@@ -3,12 +3,14 @@ import QtQuick.Controls as C
 
 C.SpinBox {
     id: control
-    implicitWidth: 120
-    implicitHeight: Math.max(30, contentItem.implicitHeight + 12 * Theme.density)
+    implicitWidth: 158
+    implicitHeight: Math.max(34, contentItem.implicitHeight + 12 * Theme.density)
     font.family: Theme.fontFamily
     font.pixelSize: 12
-    leftPadding: 28
-    rightPadding: 28
+    leftPadding: 36
+    rightPadding: 36
+    textFromValue: (value, locale) => String(value)
+    valueFromText: (text, locale) => Number(text)
     opacity: enabled ? 1 : 0.5
     contentItem: TextInput {
         text: control.textFromValue(control.value, control.locale)
@@ -24,17 +26,17 @@ C.SpinBox {
         selectByMouse: true
     }
     down.indicator: Rectangle {
-        width: 26; height: control.height
+        width: 32; height: control.height
         radius: Theme.radius
-        color: control.down.pressed ? Theme.glowSoft : "transparent"
-        Text { anchors.centerIn: parent; text: "−"; color: control.down.enabled ? Theme.glow : Theme.subtext; font.pixelSize: 16 }
+        color: control.down.pressed ? Theme.glowSoft : Theme.glass
+        Text { anchors.centerIn: parent; text: "−"; color: control.down.enabled ? Theme.glow : Theme.subtext; font.pixelSize: 16; font.family: Theme.fontFamily }
     }
     up.indicator: Rectangle {
         x: control.width - width
-        width: 26; height: control.height
+        width: 32; height: control.height
         radius: Theme.radius
-        color: control.up.pressed ? Theme.glowSoft : "transparent"
-        Text { anchors.centerIn: parent; text: "+"; color: control.up.enabled ? Theme.glow : Theme.subtext; font.pixelSize: 16 }
+        color: control.up.pressed ? Theme.glowSoft : Theme.glass
+        Text { anchors.centerIn: parent; text: "+"; color: control.up.enabled ? Theme.glow : Theme.subtext; font.pixelSize: 16; font.family: Theme.fontFamily }
     }
     background: Rectangle { color: Theme.deep; radius: Theme.radius; border.color: control.visualFocus ? Theme.glow : Theme.edge; border.width: control.visualFocus ? 2 : 1 }
 }

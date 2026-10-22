@@ -36,7 +36,7 @@ Control {
             spacing: 10
             Label { text: root.title.toUpperCase(); color: Theme.glow; font.pixelSize: 11; font.bold: true; font.letterSpacing: 1.5 }
             Rectangle { Layout.fillWidth: true; height: 1; color: Theme.edge }
-            Label { text: root.configSection ? "[" + root.configSection + "]" : ""; color: Theme.subtext; font.pixelSize: 10; elide: Text.ElideMiddle; Layout.maximumWidth: root.width * 0.4 }
+
         }
         ColumnLayout {
             id: body

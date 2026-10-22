@@ -1,11 +1,12 @@
 #include "ConfigStore.h"
-#include <QCoreApplication>
 #include <QColor>
+#include <QCoreApplication>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJSValue>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonParseError>
@@ -30,6 +31,23 @@ QString ConfigStore::read(QString path) {
   return f.open(QIODevice::ReadOnly) ? QString::fromUtf8(f.readAll())
                                      : QString();
 }
+QVariant ConfigStore::fromUi(QVariant value) {
+  if (value.metaType().id() == qMetaTypeId<QJSValue>())
+    value = value.value<QJSValue>().toVariant();
+  if (value.metaType().id() == QMetaType::QVariantList) {
+    auto list = value.toList();
+    for (auto &entry : list)
+      entry = fromUi(entry);
+    return list;
+  }
+  if (value.metaType().id() == QMetaType::QVariantMap) {
+    auto map = value.toMap();
+    for (auto it = map.begin(); it != map.end(); ++it)
+      it.value() = fromUi(it.value());
+    return map;
+  }
+  return value;
+}
 ConfigStore::ConfigStore(QString root, QObject *parent)
     : QObject(parent), m_root(root) {
   m_home =
@@ -37,6 +55,20 @@ ConfigStore::ConfigStore(QString root, QObject *parent)
   m_state = qEnvironmentVariable("XDG_STATE_HOME",
                                  QDir::homePath() + "/.local/state") +
             "/abyssal/settings-backups";
+  m_externalTimer.setSingleShot(true);
+  m_externalTimer.setInterval(120);
+  connect(&m_watcher, &QFileSystemWatcher::fileChanged, this,
+          [this] { m_externalTimer.start(); });
+  connect(&m_watcher, &QFileSystemWatcher::directoryChanged, this,
+          [this] { m_externalTimer.start(); });
+  connect(&m_externalTimer, &QTimer::timeout, this, [this] {
+    if (!dirtyCount())
+      reload();
+    else {
+      m_externalChange = true;
+      emit changed();
+    }
+  });
   reload();
 }
 void ConfigStore::report(QString s) {
@@ -81,6 +113,8 @@ void ConfigStore::loadWave(QString path, int depth) {
   }
 }
 void ConfigStore::reload() {
+  m_waveCacheValid = false;
+  m_externalChange = false;
   m_docs.clear();
   for (QString id : {"appearance", "wallpaper", "layout", "updates", "idle",
                      "notifications", "profile", "autostart", "settings"})
@@ -94,6 +128,20 @@ void ConfigStore::reload() {
     load("theme:" + QFileInfo(name).completeBaseName(),
          QFileInfo(name).completeBaseName(), user.filePath(name));
   loadWave(m_home + "/tidewm/config.wave");
+  if (!m_watcher.files().isEmpty())
+    m_watcher.removePaths(m_watcher.files());
+  if (!m_watcher.directories().isEmpty())
+    m_watcher.removePaths(m_watcher.directories());
+  QStringList watched;
+  for (const auto &d : m_docs)
+    if (QFileInfo::exists(d.path))
+      watched << d.path;
+  for (const auto &path :
+       {m_home + "/abyssal", m_home + "/abyssal/themes", m_home + "/tidewm"})
+    if (QFileInfo::exists(path))
+      watched << path;
+  if (!watched.isEmpty())
+    m_watcher.addPaths(watched);
   emit changed();
   report("Configuration loaded. Changes stay in a draft until you apply them.");
 }
@@ -119,6 +167,7 @@ int ConfigStore::dirtyCount() const {
   return n;
 }
 QVariant ConfigStore::value(QString id, QString key, QVariant fallback) const {
+  fallback = fromUi(fallback);
   if (!m_docs.contains(id))
     return fallback;
   QJsonValue v = json(m_docs[id]);
@@ -149,6 +198,7 @@ static QJsonValue put(QJsonValue current, const QStringList &parts, int at,
   return obj;
 }
 void ConfigStore::setValue(QString id, QString key, QVariant value) {
+  value = fromUi(value);
   if (!m_docs.contains(id) || m_docs[id].readOnly)
     return;
   QJsonParseError error;
@@ -168,21 +218,23 @@ QString ConfigStore::text(QString id) const { return m_docs.value(id).draft; }
 void ConfigStore::setText(QString id, QString t) {
   if (m_docs.contains(id) && !m_docs[id].readOnly && m_docs[id].draft != t) {
     m_docs[id].draft = t;
+    m_waveCacheValid = false;
     emit changed();
   }
 }
 void ConfigStore::resetAppLook() {
   QJsonParseError error;
-  const auto parsed = QJsonDocument::fromJson(m_docs["settings"].draft.toUtf8(), &error);
+  const auto parsed =
+      QJsonDocument::fromJson(m_docs["settings"].draft.toUtf8(), &error);
   if (error.error != QJsonParseError::NoError || !parsed.isObject()) {
     report("Fix the settings JSON syntax before resetting the app's look.");
     return;
   }
   auto object = parsed.object();
-  for (const auto &key : {"backgroundStyle", "backgroundTop", "backgroundBottom",
-                          "windowOpacity", "shafts", "snow", "drift", "glass",
-                          "glowStrength", "glowSource", "selectionStyle", "density",
-                          "font", "corners", "reduceMotion"})
+  for (const auto &key :
+       {"backgroundStyle", "backgroundTop", "backgroundBottom", "windowOpacity",
+        "shafts", "snow", "drift", "glass", "glowStrength", "glowSource",
+        "selectionStyle", "density", "font", "corners", "reduceMotion"})
     object.remove(key);
   setText("settings", QString::fromUtf8(QJsonDocument(object).toJson()));
 }
@@ -261,11 +313,22 @@ bool ConfigStore::setBinding(QString id, int line, QString chord,
   setText(id, lines.join('\n'));
   return true;
 }
+bool ConfigStore::addShortcut(QString chord, QString action) {
+  const auto path = m_home + "/tidewm/config.wave", id = "wave:" + path;
+  if (!m_docs.contains(id)) {
+    load(id, "config.wave", path);
+    if (!m_docs[id].existed)
+      m_docs[id].draft.clear();
+  }
+  return setBinding(id, -1, chord, action);
+}
 void ConfigStore::setAutostart(QVariantList apps) {
+  apps = fromUi(apps).toList();
   QString main = "wave:" + m_home + "/tidewm/config.wave";
   if (!m_docs.contains(main)) {
-    report("TideWM configuration is required for session autostart.");
-    return;
+    load(main, "config.wave", m_home + "/tidewm/config.wave");
+    if (!m_docs[main].existed)
+      m_docs[main].draft.clear();
   }
   QJsonArray commands;
   QSet<QString> seen;
@@ -329,6 +392,7 @@ QString ConfigStore::copyTheme(QString id) {
   o["name"] = o.value("name").toString() + " · Custom";
   m_docs["theme:" + next].draft = QString::fromUtf8(QJsonDocument(o).toJson());
   setValue("appearance", "theme", next);
+  setValue("appearance", "fromWallpaper", false);
   emit changed();
   return next;
 }
@@ -340,7 +404,7 @@ bool ConfigStore::unchanged(const Document &d) const {
 }
 bool ConfigStore::validate(const Document &d, QString &error) const {
   if (d.id.startsWith("wave:")) {
-    QString fmt = QStandardPaths::findExecutable("wavefmt");
+    QString fmt = waveValidator();
     if (fmt.isEmpty()) {
       error = "Install TideWM's wavefmt to validate compositor files before "
               "applying.";
@@ -394,7 +458,8 @@ bool ConfigStore::validate(const Document &d, QString &error) const {
     } else if (d.id == "settings") {
       if (!number("windowOpacity", 40, 100, false) ||
           !number("shafts", 0, 100, false) || !number("snow", 0, 100, false) ||
-          !number("glass", 0, 15, false) || !number("glowStrength", 0, 40, false))
+          !number("glass", 0, 15, false) ||
+          !number("glowStrength", 0, 40, false))
         return false;
       const QMap<QString, QStringList> options{
           {"backgroundStyle", {"theme", "solid", "custom", "wallpaper"}},
@@ -402,7 +467,8 @@ bool ConfigStore::validate(const Document &d, QString &error) const {
           {"selectionStyle", {"edge", "filled", "underline"}},
           {"density", {"compact", "normal", "roomy"}}};
       for (auto it = options.cbegin(); it != options.cend(); ++it)
-        if (o.contains(it.key()) && !it.value().contains(o[it.key()].toString())) {
+        if (o.contains(it.key()) &&
+            !it.value().contains(o[it.key()].toString())) {
           error = "Invalid " + it.key() + " in " + d.label;
           return false;
         }
@@ -500,6 +566,15 @@ bool ConfigStore::apply() {
   if (dirty.isEmpty()) {
     report("No changes to apply.");
     return true;
+  }
+  if (std::any_of(dirty.cbegin(), dirty.cend(),
+                  [](const QString &id) { return id.startsWith("wave:"); })) {
+    for (const auto &dependency : m_docs)
+      if (dependency.id.startsWith("wave:") && !unchanged(dependency)) {
+        report("The desktop configuration changed outside this app. Reload "
+               "before saving; your draft has been kept.");
+        return false;
+      }
   }
   QDir().mkpath(m_state);
   QTemporaryDir backupDirectory(

@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
   QCommandLineParser parser;
   parser.addHelpOption();
   parser.addOption({"shell-root", "Abyssal Shell directory", "path",
-                    QDir::homePath() + "/.config/quickshell/abyssal"});
+                    QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + "/quickshell/abyssal"});
   parser.addOption({"page", "Initial settings section", "name", "appearance"});
   parser.addOption({"capture", "Save a UI capture for testing", "path"});
   parser.addOption(
@@ -37,7 +37,9 @@ int main(int argc, char **argv) {
       QLocalSocket socket;
       socket.connectToServer(endpoint);
       if (socket.waitForConnected(1500)) {
-        socket.write("activate");
+        socket.write(parser.isSet("page")
+                         ? ("page:" + parser.value("page") + "\n").toUtf8()
+                         : QByteArray("activate\n"));
         socket.waitForBytesWritten(1000);
         return 0;
       }
@@ -59,11 +61,26 @@ int main(int argc, char **argv) {
     return 1;
   QObject::connect(&server, &QLocalServer::newConnection, &app, [&] {
     while (auto socket = server.nextPendingConnection()) {
-      auto window = qobject_cast<QQuickWindow *>(engine.rootObjects().first());
-      window->show();
-      window->raise();
-      window->requestActivate();
-      socket->deleteLater();
+      auto activate = [&, socket] {
+        if (!socket->canReadLine())
+          return;
+        const auto request = socket->readLine().trimmed();
+        auto window =
+            qobject_cast<QQuickWindow *>(engine.rootObjects().first());
+        if (request.startsWith("page:"))
+          QMetaObject::invokeMethod(
+              window, "openPage",
+              Q_ARG(QVariant, QString::fromUtf8(request.mid(5))));
+        window->show();
+        window->raise();
+        window->requestActivate();
+        socket->disconnectFromServer();
+      };
+      QObject::connect(socket, &QLocalSocket::readyRead, socket, activate);
+      QObject::connect(socket, &QLocalSocket::disconnected, socket,
+                       &QObject::deleteLater);
+      if (socket->bytesAvailable())
+        activate();
     }
   });
   if (parser.isSet("capture"))

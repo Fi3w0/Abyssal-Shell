@@ -2,6 +2,7 @@
 #include "../src/ConfigStore.h"
 #include <QDir>
 #include <QFile>
+#include <QJSEngine>
 #include <QStandardPaths>
 #include <QtTest>
 void ConfigTest::write(QString path, QByteArray data) {
@@ -159,11 +160,11 @@ void ConfigTest::appLookUsesProtectedDrafts() {
 }
 
 void ConfigTest::invalidAppLookIsBlocked() {
-  for (const auto &draft : {R"({"glass":16})", R"({"snow":-1})",
-                           R"({"windowOpacity":39})", R"({"glowStrength":41})",
-                           R"({"backgroundTop":"broken"})",
-                           R"({"backgroundStyle":"broken"})",
-                           R"({"density":"broken"})", R"({"drift":1})"}) {
+  for (const auto &draft :
+       {R"({"glass":16})", R"({"snow":-1})", R"({"windowOpacity":39})",
+        R"({"glowStrength":41})", R"({"backgroundTop":"broken"})",
+        R"({"backgroundStyle":"broken"})", R"({"density":"broken"})",
+        R"({"drift":1})"}) {
     ConfigStore s(root);
     s.setText("settings", draft);
     QVERIFY(!s.apply());
@@ -183,5 +184,177 @@ void ConfigTest::resetAppLookPreservesUnknownKeys() {
   s.setText("settings", "{broken");
   s.resetAppLook();
   QCOMPARE(s.text("settings"), "{broken");
+}
+
+void ConfigTest::desktopReadsIncludesInOrder() {
+  write(config + "/tidewm/config.wave",
+        "gaps = 4\ninclude \"look.wave\"\ngaps = 9\n");
+  write(config + "/tidewm/look.wave",
+        "gaps = 6\nscroll {\n tile_proportion = 0.94\n center_focused = "
+        "true\n}\nrule {\n gaps = 55\n}\nbind Super+Q { close-window }\n");
+  ConfigStore s(root);
+  QCOMPARE(s.desktopValue("gaps").toInt(), 9);
+  QCOMPARE(s.desktopValue("scroll.tile_proportion").toDouble(), .94);
+  QCOMPARE(s.desktopValue("scroll.center_focused").toString(), "always");
+  write(config + "/tidewm/config.wave", "gaps = 4\ninclude \"look.wave\"\n");
+  s.reload();
+  QCOMPARE(s.desktopValue("gaps").toInt(), 4);
+  QCOMPARE(s.dirtyCount(), 0);
+}
+void ConfigTest::desktopDraftsPreserveAndApply() {
+  if (!ConfigStore(root).desktopEditable())
+    QSKIP("wavefmt unavailable");
+  const QByteArray original = "# My configuration\ngaps = 9\ninclude "
+                              "\"look.wave\"\nbind Super+Q { close-window }\n";
+  write(config + "/tidewm/config.wave", original);
+  write(config + "/tidewm/look.wave", "rounding {\n radius = 12\n}\n");
+  ConfigStore s(root);
+  QVERIFY(s.setDesktopValue("engine", "scroll"));
+  QVERIFY(s.setDesktopValue("gaps", 18));
+  QVERIFY(s.setDesktopValue("scroll.tile_proportion", .67));
+  QVERIFY(
+      s.setDesktopValue("scroll.preset_widths", QVariantList{.333, .5, .8}));
+  QVERIFY(s.setDesktopValue("input.touchpad.natural_scroll", true));
+  QCOMPARE(read(config + "/tidewm/config.wave"), original);
+  QVERIFY(!QFileInfo::exists(config + "/tidewm/abyssal-settings.wave"));
+  QCOMPARE(s.desktopValue("gaps").toInt(), 18);
+  QVERIFY(s.apply());
+  QVERIFY(read(config + "/tidewm/config.wave").contains("# My configuration"));
+  QVERIFY(read(config + "/tidewm/config.wave").contains("gaps = 18"));
+  QVERIFY(read(config + "/tidewm/config.wave")
+              .contains("bind Super+Q { close-window }"));
+  QCOMPARE(read(config + "/tidewm/look.wave"),
+           QByteArray("rounding {\n radius = 12\n}\n"));
+  s.reload();
+  QCOMPARE(s.desktopValue("engine").toString(), "scroll");
+  QCOMPARE(s.desktopValue("scroll.tile_proportion").toDouble(), .67);
+  QCOMPARE(s.desktopValue("input.touchpad.natural_scroll").toBool(), true);
+  const auto managed = read(config + "/tidewm/abyssal-settings.wave");
+  QVERIFY(s.setDesktopValue("gaps", 22));
+  QVERIFY(s.setDesktopValue("gaps", 18));
+  QCOMPARE(s.text("wave:" + config + "/tidewm/abyssal-settings.wave").toUtf8(),
+           managed);
+  QCOMPARE(s.dirtyCount(), 0);
+}
+void ConfigTest::desktopInvalidAndExternalChanges() {
+  if (!ConfigStore(root).desktopEditable())
+    QSKIP("wavefmt unavailable");
+  write(config + "/tidewm/config.wave", "gaps = 8\n");
+  ConfigStore s(root);
+  QVERIFY(!s.setDesktopValue("gaps", -1));
+  QVERIFY(!s.setDesktopValue("engine", "scroll\nspawn = malicious"));
+  QVERIFY(!s.setDesktopValue("input.xkb_layout", "us\"\nspawn = malicious"));
+  QVERIFY(!s.setDesktopValue("scroll.preset_widths", QVariantList{.5, .333}));
+  QCOMPARE(s.dirtyCount(), 0);
+  QVERIFY(s.setDesktopValue("gaps", 10));
+  write(config + "/tidewm/config.wave", "# changed elsewhere\ngaps = 30\n");
+  QVERIFY(!s.apply());
+  QVERIFY(read(config + "/tidewm/config.wave").contains("gaps = 30"));
+  QVERIFY(!QFileInfo::exists(config + "/tidewm/abyssal-settings.wave"));
+  write(config + "/tidewm/config.wave", "include \"abyssal-settings.wave\"\n");
+  write(config + "/tidewm/abyssal-settings.wave", "border {\n width = 2\n}\n");
+  s.reload();
+  QVERIFY(s.setDesktopValue("border.width", 3));
+  write(config + "/tidewm/config.wave",
+        "include \"abyssal-settings.wave\"\nborder {\n width = 8\n}\n");
+  QVERIFY(!s.apply());
+  QVERIFY(read(config + "/tidewm/abyssal-settings.wave").contains("width = 2"));
+}
+void ConfigTest::animationPresetsAndOverrides() {
+  if (!ConfigStore(root).desktopEditable())
+    QSKIP("wavefmt unavailable");
+  write(config + "/tidewm/config.wave",
+        "animations {\n open {\n  duration = 2s\n }\n preset = snappy\n}\n");
+  ConfigStore s(root);
+  QCOMPARE(s.desktopValue("animations.open.duration").toInt(), 2000);
+  QCOMPARE(s.desktopValue("animations.close.duration").toInt(), 100);
+  QVERIFY(s.setDesktopValue("animations.preset", "silk"));
+  QCOMPARE(s.desktopValue("animations.open.duration").toInt(), 170);
+  QVERIFY(s.setDesktopValue("animations.open.duration", 250));
+  QCOMPARE(s.desktopValue("animations.open.duration").toInt(), 250);
+  QVERIFY(s.setDesktopValue("animations.preset", "minimal"));
+  QCOMPARE(s.desktopValue("animations.open.duration").toInt(), 100);
+  QVERIFY(s.apply());
+  write(config + "/tidewm/config.wave",
+        "animations {\n open {\n duration = 500ms\n }\n}\nanimations {\n "
+        "preset = snappy\n}\n");
+  s.reload();
+  QCOMPARE(s.desktopValue("animations.open.duration").toInt(), 120);
+  QVERIFY(s.setDesktopValue("animations.open.duration", 280));
+  QCOMPARE(s.desktopValue("animations.open.duration").toInt(), 280);
+  QVERIFY(s.apply());
+}
+void ConfigTest::accentIsSharedAndShippedThemeIsKept() {
+  ConfigStore s(root);
+  const auto original = read(root + "/themes/sample.json");
+  QVERIFY(s.setAccent("#123abc"));
+  const auto id = s.value("appearance", "theme").toString();
+  QVERIFY(id.startsWith("custom-"));
+  QCOMPARE(s.value("theme:" + id, "colors.accent").toString(), "#123abc");
+  QCOMPARE(s.value("theme:" + id, "tidewm.border").toList(),
+           QVariantList({"#123abc", "#123abc"}));
+  QCOMPARE(read(root + "/themes/sample.json"), original);
+  QVERIFY(!s.setAccent("not a colour"));
+}
+void ConfigTest::externalChangesReloadWithoutLosingDrafts() {
+  ConfigStore s(root);
+  write(config + "/abyssal/appearance.json",
+        R"({"theme":"external","custom":42})");
+  QTRY_COMPARE(s.value("appearance", "theme").toString(), "external");
+  QCOMPARE(s.dirtyCount(), 0);
+  s.setValue("appearance", "theme", "my-draft");
+  write(config + "/abyssal/appearance.json", R"({"theme":"other-app"})");
+  QTRY_VERIFY(s.externalChange());
+  QCOMPARE(s.value("appearance", "theme").toString(), "my-draft");
+  QVERIFY(!s.apply());
+  QVERIFY(read(config + "/abyssal/appearance.json").contains("other-app"));
+}
+
+void ConfigTest::deviceSettingsCanBeRestored() {
+  if (!ConfigStore(root).desktopEditable())
+    QSKIP("wavefmt unavailable");
+  write(config + "/tidewm/config.wave",
+        "input {\n xkb_layout = us\n touchpad {\n  tap_to_click = false # "
+        "device preference\n }\n}\n");
+  ConfigStore s(root);
+  QVERIFY(s.setDesktopValue("input.touchpad.tap_to_click", true));
+  QVERIFY(s.setDesktopValue("input.touchpad.natural_scroll", true));
+  QCOMPARE(s.desktopValue("input.touchpad.tap_to_click").toBool(), true);
+  QVERIFY(s.apply());
+  s.reload();
+  QVERIFY(s.setDesktopValue("input.touchpad.tap_to_click", "device-default"));
+  QVERIFY(s.setDesktopValue("input.touchpad.natural_scroll", "device-default"));
+  QCOMPARE(s.desktopValue("input.touchpad.tap_to_click").toBool(), false);
+  QVERIFY(!s.desktopValue("input.touchpad.natural_scroll").isValid());
+  QVERIFY(s.apply());
+  QVERIFY(read(config + "/tidewm/config.wave")
+              .contains("tap_to_click = false # device preference"));
+  QVERIFY(!read(config + "/tidewm/config.wave").contains("natural_scroll"));
+}
+void ConfigTest::qmlObjectsAndArraysRemainStructured() {
+  ConfigStore s(root);
+  QJSEngine js;
+  s.setValue(
+      "layout", "monitors",
+      QVariant::fromValue(js.evaluate("({'Display.with.dots':{panels:[{items:[{"
+                                      "id:'clock',date:true}]}]}})")));
+  auto monitors = s.value("layout", "monitors").toMap();
+  const auto items = monitors["Display.with.dots"]
+                         .toMap()["panels"]
+                         .toList()[0]
+                         .toMap()["items"]
+                         .toList();
+  QCOMPARE(items[0].toMap()["date"].toBool(), true);
+  QVERIFY(!s.text("layout").contains("null"));
+  if (s.desktopEditable()) {
+    QVERIFY(
+        s.setDesktopValue("scroll.preset_widths",
+                          QVariant::fromValue(js.evaluate("[0.25,0.5,0.75]"))));
+    QCOMPARE(s.desktopValue("scroll.preset_widths").toList().size(), 3);
+  }
+  s.setAutostart({QVariant::fromValue(
+      js.evaluate("({name:'Music',command:'music-app',enabled:true})"))});
+  QCOMPARE(s.value("autostart", "apps").toList()[0].toMap()["name"].toString(),
+           "Music");
 }
 QTEST_GUILESS_MAIN(ConfigTest)

@@ -34,7 +34,7 @@ ApplicationWindow {
         exposed: win.visible && win.visibility !== Window.Minimized
     }
     property int revision: 0
-    property string page: initialPage
+    property string page: initialPage === "tidewm" ? "windows" : initialPage
     property string query: ""
     property string themeId: Theme.themeId
     property string output: Store.outputs()[0] || "*"
@@ -64,28 +64,20 @@ ApplicationWindow {
             group: "",
             words: "rice bar dock layout"
         },
-        {
-            id: "keybinds",
-            title: "Keybinds",
-            group: "DESKTOP",
-            words: "keyboard shortcuts commands"
-        },
-        {
-            id: "tidewm",
-            title: "TideWM",
-            group: "",
-            words: "compositor windows displays input borders shadows animation"
-        },
+        { id: "windows", title: "Windows & workspaces", group: "DESKTOP", words: "layout gaps columns scroll ocean classic borders corners" },
+        { id: "motion", title: "Motion & effects", group: "", words: "animations speed transition effects workspace viscosity" },
+        { id: "input", title: "Keyboard & touchpad", group: "INPUT", words: "keyboard layouts language mouse focus tapping pointer scrolling repeat" },
+        { id: "keybinds", title: "Shortcuts", group: "", words: "keyboard shortcuts commands binds" },
         {
             id: "autostart",
             title: "Startup apps",
-            group: "",
+            group: "SYSTEM",
             words: "login autostart applications"
         },
         {
             id: "updates",
             title: "Updates",
-            group: "SYSTEM",
+            group: "",
             words: "packages manager aur flatpak repositories"
         },
         {
@@ -176,9 +168,21 @@ ApplicationWindow {
     ColorDialog {
         id: colour
         property string key
-        onAccepted: Store.setValue("theme:" + win.themeId, "colors." + key, selectedColor.toString())
+        onAccepted: { if (key === "accent") Store.setAccent(selectedColor.toString()); else Store.setValue("theme:" + win.themeId, "colors." + key, selectedColor.toString()); }
     }
+    function searchable(section) {
+        const desktop = Store.desktopPages.find(p => p.id === section.id);
+        return (section.title + " " + section.words + " " + (desktop ? desktop.groups.flatMap(g => g.rows.map(r => r.title + " " + (r.hint || ""))).join(" ") : "")).toLowerCase();
+    }
+    function openPage(target) { const page = target === "tidewm" ? "windows" : target; if (sections.some(s => s.id === page)) navigate(page); }
+    property bool saveFailed: false
+    property bool recording: false
     readonly property var currentSection: sections.find(s => s.id === page) || sections[0]
+    readonly property string currentHall: {
+        let hall = "settings";
+        for (const section of sections) { if (section.group) hall = section.group.toLowerCase(); if (section.id === page) break; }
+        return hall;
+    }
     readonly property bool narrow: width < 1000
     property var history: []
     function navigate(target) {
@@ -186,23 +190,30 @@ ApplicationWindow {
         history = history.concat([page]);
         page = target;
     }
-    Shortcut { sequence: "Ctrl+F"; onActivated: { search.forceActiveFocus(); search.selectAll(); } }
-    Shortcut { sequence: "Ctrl+,"; onActivated: win.navigate("appLook") }
-    Shortcut { sequence: "Alt+Left"; onActivated: { if (win.history.length) { const h = win.history.slice(); win.page = h.pop(); win.history = h; } } }
+    Shortcut { enabled: !win.recording; sequence: "Ctrl+F"; onActivated: { search.forceActiveFocus(); search.selectAll(); } }
+    Shortcut { enabled: !win.recording; sequence: "Ctrl+,"; onActivated: win.navigate("appLook") }
+    Shortcut { enabled: !win.recording; sequence: "Alt+Left"; onActivated: { if (win.history.length) { const h = win.history.slice(); win.page = h.pop(); win.history = h; } } }
     header: Rectangle {
-        height: 38
+        height: 44
         color: Theme.bar
-        DragHandler { target: null; onActiveChanged: if (active) win.startSystemMove() }
-        TapHandler { onDoubleTapped: win.visibility === Window.Maximized ? win.showNormal() : win.showMaximized() }
+        Item {
+            anchors.fill: parent
+            anchors.leftMargin: 50
+            anchors.rightMargin: 120
+            DragHandler { target: null; onActiveChanged: if (active) win.startSystemMove() }
+            TapHandler { onDoubleTapped: win.visibility === Window.Maximized ? win.showNormal() : win.showMaximized() }
+        }
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 14
             anchors.rightMargin: 8
             spacing: 8
+            WindowButton { symbol: "back"; text: "Back"; enabled: win.history.length > 0; onClicked: { const h = win.history.slice(); win.page = h.pop(); win.history = h; } }
             Label { text: "abyssal"; color: Theme.text; font.bold: true; font.letterSpacing: 0.5 }
             Label { text: "· settings — " + win.currentSection.title.toLowerCase(); color: Theme.subtext; font.pixelSize: 11; Layout.fillWidth: true; elide: Text.ElideRight }
-            ArchiveButton { text: "minimize"; Accessible.name: "Minimize"; onClicked: win.showMinimized() }
-            ArchiveButton { text: "close"; Accessible.name: "Close settings"; onClicked: win.close() }
+            WindowButton { symbol: "minimize"; text: "Minimize"; onClicked: win.showMinimized() }
+            WindowButton { symbol: win.visibility === Window.Maximized ? "restore" : "maximize"; text: win.visibility === Window.Maximized ? "Restore" : "Maximize"; onClicked: win.visibility === Window.Maximized ? win.showNormal() : win.showMaximized() }
+            WindowButton { symbol: "close"; text: "Close"; destructive: true; onClicked: win.close() }
         }
         Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Theme.edge }
     }
@@ -225,22 +236,11 @@ ApplicationWindow {
                     onClicked: win.navigate("account")
                     contentItem: RowLayout {
                         spacing: 10
-                        Rectangle {
-                            Layout.preferredWidth: 38
-                            Layout.preferredHeight: 38
-                            radius: Theme.radius
-                            color: Theme.glowSoft
-                            border.color: Theme.glowEdge
-                            Image {
-                                anchors.fill: parent
-                                anchors.margins: 2
-                                fillMode: Image.PreserveAspectCrop
-                                source: {
-                                    const path = win.get("profile", "avatar", win.account.avatar);
-                                    return path ? "file://" + path : "";
-                                }
-                            }
-                            Label { anchors.centerIn: parent; visible: !win.get("profile", "avatar", win.account.avatar); text: (win.account.login || "a").slice(0, 1).toUpperCase(); color: Theme.glow; font.bold: true }
+                        Avatar {
+                            Layout.preferredWidth: 40
+                            Layout.preferredHeight: 40
+                            source: { const path = win.get("profile", "avatar", win.account.avatar); return path ? "file://" + path : ""; }
+                            Label { anchors.centerIn: parent; visible: !parent.source.toString(); text: (win.account.login || "a").slice(0, 1).toUpperCase(); color: Theme.glow; font.bold: true }
                         }
                         ColumnLayout {
                             visible: !win.narrow
@@ -253,7 +253,9 @@ ApplicationWindow {
                 ArchiveTextField {
                     id: search
                     Layout.fillWidth: true
-                    placeholderText: win.narrow ? "…" : "search…                      ^F"
+                    placeholderText: win.narrow ? "…" : "Search settings"
+                    rightPadding: win.narrow ? 8 : 34
+                    Label { anchors.right: parent.right; anchors.rightMargin: 10; anchors.verticalCenter: parent.verticalCenter; visible: !win.narrow; text: "^F"; color: Theme.subtext; font.pixelSize: 10 }
                     Accessible.name: "Search settings"
                     onTextChanged: win.query = text.toLowerCase()
                     ToolTip.visible: hovered && win.narrow
@@ -299,7 +301,7 @@ ApplicationWindow {
                                 id: navEntry
                                 required property var modelData
                                 width: parent.width
-                                visible: !win.query || (modelData.title + " " + modelData.words).toLowerCase().includes(win.query)
+                                visible: !win.query || win.searchable(modelData).includes(win.query)
                                 RowLayout {
                                     width: parent.width
                                     visible: modelData.group !== "" && !win.narrow
@@ -346,15 +348,23 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.margins: 22 * Theme.density
                 spacing: 5
-                Label { text: win.page === "appLook" || ["appearance", "wallpaper", "panels"].includes(win.page) ? "look › " + win.currentSection.title.toLowerCase() : "settings › " + win.currentSection.title.toLowerCase(); color: Theme.subtext; font.pixelSize: 11 }
+                Label { text: win.currentHall + " › " + win.currentSection.title.toLowerCase(); color: Theme.subtext; font.pixelSize: 11 }
                 Label { text: win.currentSection.title; color: Theme.text; font.pixelSize: 26; font.weight: Font.ExtraBold; font.letterSpacing: -0.5; Layout.fillWidth: true; wrapMode: Text.WordWrap }
                 Label {
-                    text: win.page === "appLook" ? "Shape the water, light and surfaces. This window is your live preview." : win.page === "tidewm" ? "Edit TideWM and its included files. Syntax is checked before saving." : "Preview changes here. Apply to save your draft."
+                    text: win.page === "appLook" ? "Shape the water, light and surfaces. One accent follows the whole desktop." : (Store.desktopPages.find(p => p.id === win.page) || {}).description || "Choose your preferences, then save your changes."
                     color: Theme.subtext
                     font.pixelSize: 11
                     wrapMode: Text.WordWrap
                     Layout.fillWidth: true
                 }
+            }
+            RowLayout {
+                visible: Store.externalChange
+                Layout.fillWidth: true
+                Layout.leftMargin: 22
+                Layout.rightMargin: 22
+                Label { text: "Settings changed in another app. Your unsaved changes are kept."; color: Theme.warn; font.pixelSize: 11; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                ArchiveButton { text: "Reload"; onClicked: { win.closing = false; discard.open(); } }
             }
             ScrollView {
                 id: scroll
@@ -364,8 +374,9 @@ ApplicationWindow {
                 contentWidth: availableWidth
                 Loader {
                     id: pageLoader
-                    width: scroll.availableWidth
-                    sourceComponent: ({ appearance: appearance, appLook: appLook, wallpaper: wallpaper, panels: panels, keybinds: keybinds, tidewm: files, files: files, updates: updates, notifications: notifications, idle: idle, account: accountPage, autostart: autostart })[win.page] || appearance
+                    x: 22 * Theme.density
+                    width: Math.max(0, scroll.availableWidth - 44 * Theme.density)
+                    sourceComponent: ({ appearance: appearance, appLook: appLook, wallpaper: wallpaper, panels: panels, keybinds: keybinds, windows: desktopPage, motion: desktopPage, input: desktopPage, files: files, updates: updates, notifications: notifications, idle: idle, account: accountPage, autostart: autostart })[win.page] || appearance
                     onLoaded: { scroll.contentItem.contentY = 0; pageEnter.restart(); }
                     SequentialAnimation {
                         id: pageEnter
@@ -376,7 +387,7 @@ ApplicationWindow {
             }
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Store.dirtyCount ? 60 : 40
+                Layout.preferredHeight: win.saveFailed ? 64 : 52
                 color: Theme.bar
                 Rectangle { width: parent.width; height: 1; color: Theme.edge }
                 RowLayout {
@@ -384,14 +395,16 @@ ApplicationWindow {
                     anchors.leftMargin: 22
                     anchors.rightMargin: 22
                     spacing: 12
+                    Rectangle { width: 6; height: 6; radius: 3; color: win.saveFailed ? Theme.danger : Store.dirtyCount ? Theme.warn : Theme.success }
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 3
-                        Label { text: Store.dirtyCount ? "unsaved draft (" + Store.dirtyCount + ")" : "all changes saved"; color: Store.dirtyCount ? Theme.warn : Theme.success; font.pixelSize: 10 }
-                        Label { visible: Store.dirtyCount > 0; text: Store.message; color: Theme.subtext; font.pixelSize: 10; Layout.fillWidth: true; elide: Text.ElideMiddle }
+                        Label { text: win.saveFailed ? "Couldn’t save changes" : Store.dirtyCount ? "Unsaved changes" : "Changes saved"; color: Theme.text; font.pixelSize: 11 }
+                        Label { visible: win.saveFailed; text: Store.message; color: Theme.subtext; font.pixelSize: 10; Layout.fillWidth: true; elide: Text.ElideMiddle }
                     }
-                    ArchiveButton { text: "reload"; onClicked: { if (Store.dirtyCount) { win.closing = false; discard.open(); } else Store.reload(); } }
-                    ArchiveButton { text: "apply changes"; visible: Store.dirtyCount > 0; highlighted: true; onClicked: Store.apply() }
+                    Label { visible: !Store.dirtyCount; text: "Ctrl+F  Search"; color: Theme.subtext; font.pixelSize: 10 }
+                    ArchiveButton { text: "Discard"; visible: Store.dirtyCount > 0; onClicked: { win.closing = false; discard.open(); win.saveFailed = false; } }
+                    ArchiveButton { objectName: "saveChanges"; text: "Save changes"; visible: Store.dirtyCount > 0; highlighted: true; onClicked: { if (win.activeFocusItem) win.activeFocusItem.focus = false; win.saveFailed = !Store.apply(); } }
                 }
             }
         }
@@ -407,6 +420,7 @@ ApplicationWindow {
         spacing: 24
         Layout.fillWidth: true
     }
+    Component { id: desktopPage; DesktopPage { pageId: win.page; query: win.query } }
     Component {
         id: appLook
         AppLook {}
@@ -421,12 +435,12 @@ ApplicationWindow {
                 text: "Palette"
                 font.pixelSize: 16
                 color: Theme.glow
-                Layout.leftMargin: 22 * Theme.density
+                Layout.leftMargin: 0
             }
             Flow {
                 Layout.fillWidth: true
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 spacing: 12
                 Repeater {
                     model: Store.themes
@@ -437,7 +451,7 @@ ApplicationWindow {
                         radius: 9
                         color: modelData.colors.base || Theme.base
                         border.width: 1
-                        border.color: win.get("appearance", "theme", "abyssal-tide") === modelData.id ? Theme.glow : Theme.edge
+                        border.color: Theme.themeId === modelData.id ? Theme.glow : Theme.edge
                         Column {
                             anchors {
                                 fill: parent
@@ -477,8 +491,8 @@ ApplicationWindow {
             }
             JsonForm {
                 Layout.fillWidth: true
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 documentId: "appearance"
                 fields: [
                     {
@@ -496,8 +510,8 @@ ApplicationWindow {
                 ]
             }
             RowLayout {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 Layout.fillWidth: true
                 Label {
                     text: "Custom palette"
@@ -516,8 +530,8 @@ ApplicationWindow {
             }
             Flow {
                 Layout.fillWidth: true
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 spacing: 10
                 Repeater {
                     model: ["crust", "base", "surface0", "surface1", "overlay", "text", "subtext", "accent", "cyan", "rose", "warn", "danger", "success"]
@@ -555,8 +569,8 @@ ApplicationWindow {
             }
             JsonForm {
                 Layout.fillWidth: true
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 enabled: !(Store.themes.find(t => t.id === win.themeId) || {
                         readOnly: true
                     }).readOnly
@@ -597,8 +611,8 @@ ApplicationWindow {
                 ]
             }
             Note {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 text: "Shipped themes stay intact. Create a copy to edit colours and shape."
             }
         }
@@ -609,8 +623,8 @@ ApplicationWindow {
             width: parent.width
             spacing: 24
             RowLayout {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 Layout.fillWidth: true
                 ArchiveComboBox {
                     model: Store.outputs().concat(["*"])
@@ -627,8 +641,8 @@ ApplicationWindow {
                 }
             }
             Image {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 Layout.fillWidth: true
                 Layout.preferredHeight: 210
                 fillMode: Image.PreserveAspectCrop
@@ -641,8 +655,8 @@ ApplicationWindow {
                 asynchronous: true
             }
             Note {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 text: {
                     let s = win.get("wallpaper", "screens", {});
                     let e = s[win.output] || s["*"] || {};
@@ -651,8 +665,8 @@ ApplicationWindow {
             }
             JsonForm {
                 Layout.fillWidth: true
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 documentId: "wallpaper"
                 fields: [
                     {
@@ -709,119 +723,10 @@ ApplicationWindow {
             }
         }
     }
-    Component {
-        id: panels
-        ColumnLayout {
-            width: parent.width
-            spacing: 20
-            Note {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
-                text: "The live editor selects widgets directly on your panels. Every widget keeps its own settings, spacing and monitor layout."
-            }
-            ArchiveButton {
-                Layout.leftMargin: 22 * Theme.density
-                text: "Edit panels and widgets"
-                onClicked: Store.launch("panels")
-            }
-            Repeater {
-                model: Object.keys(win.get("layout", "monitors", {}))
-                ColumnLayout {
-                    required property string modelData
-                    Layout.leftMargin: 22 * Theme.density
-                    Layout.rightMargin: 22 * Theme.density
-                    Layout.fillWidth: true
-                    spacing: 8
-                    Label {
-                        text: modelData === "*" ? "Shared monitor layout" : modelData
-                        color: Theme.glow
-                        font.pixelSize: 15
-                    }
-                    Repeater {
-                        model: win.get("layout", "monitors", {})[modelData].panels || []
-                        Label {
-                            required property var modelData
-                            text: modelData.edge + " · " + modelData.size + " px · " + (modelData.items || []).length + " widgets · " + modelData.visibility
-                            color: Theme.subtext
-                        }
-                    }
-                }
-            }
-            ArchiveButton {
-                Layout.leftMargin: 22 * Theme.density
-                text: "Edit layout configuration"
-                onClicked: {
-                    win.documentId = "layout";
-                    win.page = "files";
-                }
-            }
-        }
-    }
+    Component { id: panels; PanelsPage {} }
     Component {
         id: keybinds
-        ColumnLayout {
-            width: parent.width
-            spacing: 12
-            Note {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
-                text: "Shortcuts from config.wave and its includes. Save a row to the draft, then Apply changes. Complex multi-line bindings remain editable in TideWM."
-            }
-            RowLayout {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
-                Layout.fillWidth: true
-                ArchiveTextField {
-                    id: newChord
-                    placeholderText: "Super+Shift+X"
-                    Layout.preferredWidth: 190
-                }
-                ArchiveTextField {
-                    id: newAction
-                    placeholderText: "TideWM action, e.g. spawn:kitty"
-                    Layout.fillWidth: true
-                }
-                ArchiveButton {
-                    text: "Add shortcut"
-                    enabled: newChord.text !== "" && newAction.text !== ""
-                    onClicked: {
-                        let d = Store.documents.find(d => d.id.startsWith("wave:") && d.label === "config.wave");
-                        if (d && Store.setBinding(d.id, -1, newChord.text, newAction.text)) {
-                            newChord.clear();
-                            newAction.clear();
-                        }
-                    }
-                }
-            }
-            Repeater {
-                model: Store.bindings
-                RowLayout {
-                    required property var modelData
-                    Layout.fillWidth: true
-                    Layout.leftMargin: 22 * Theme.density
-                    Layout.rightMargin: 22 * Theme.density
-                    spacing: 8
-                    ArchiveTextField {
-                        id: chord
-                        text: modelData.chord
-                        placeholderText: modelData.file
-                        Layout.preferredWidth: 200
-                        selectByMouse: true
-                    }
-                    ArchiveTextField {
-                        id: action
-                        text: modelData.action
-                        Layout.fillWidth: true
-                        selectByMouse: true
-                    }
-                    ArchiveButton {
-                        text: "Save row"
-                        enabled: !modelData.readOnly
-                        onClicked: Store.setBinding(modelData.id, modelData.line, chord.text, action.text)
-                    }
-                }
-            }
-        }
+        ShortcutsPage { query: win.query; onRecordingChanged: win.recording = recording }
     }
     Component {
         id: files
@@ -831,8 +736,8 @@ ApplicationWindow {
             ArchiveComboBox {
                 id: doc
                 readonly property var selectedDocument: model[currentIndex] || {}
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 Layout.fillWidth: true
                 model: Store.documents.filter(d => win.page !== "tidewm" || d.id.startsWith("wave:"))
                 textRole: "label"
@@ -841,14 +746,14 @@ ApplicationWindow {
                 onActivated: win.documentId = currentValue
             }
             Note {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 text: (doc.selectedDocument.path || "") + ((doc.selectedDocument.readOnly) ? " · Read only" : "")
             }
             TextArea {
                 id: editor
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 Layout.fillWidth: true
                 Layout.preferredHeight: 440
                 property string selectedId: doc.selectedDocument.id || ""
@@ -871,8 +776,8 @@ ApplicationWindow {
                 }
             }
             Note {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 text: "Unknown keys and comments are retained. Apply checks JSON and Wave syntax, creates backups and refuses to overwrite files changed by another app."
             }
         }
@@ -884,8 +789,8 @@ ApplicationWindow {
             spacing: 22
             JsonForm {
                 Layout.fillWidth: true
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 documentId: "updates"
                 fields: [
                     {
@@ -954,8 +859,8 @@ ApplicationWindow {
                 ]
             }
             Note {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 text: "Fedora repository selection and package ignore/important rules are also preserved in updates.json."
             }
         }
@@ -963,16 +868,18 @@ ApplicationWindow {
     Component {
         id: notifications
         JsonForm {
-            x: 22 * Theme.density
-            width: parent.width - 44 * Theme.density
+            width: parent.width
             documentId: "notifications"
             fields: [
                 {
-                    title: "Notification duration (ms)",
+                    title: "Show notifications for",
                     key: "toastDuration",
-                    kind: "number",
-                    min: 1000,
-                    max: 30000,
+                    kind: "slider",
+                    min: 1,
+                    max: 30,
+                    step: 0.1,
+                    scale: 0.001,
+                    unit: " s",
                     fallback: 4200
                 },
                 {
@@ -995,8 +902,7 @@ ApplicationWindow {
     Component {
         id: idle
         JsonForm {
-            x: 22 * Theme.density
-            width: parent.width - 44 * Theme.density
+            width: parent.width
             documentId: "idle"
             fields: [
                 {
@@ -1024,18 +930,13 @@ ApplicationWindow {
             width: parent.width
             spacing: 24
             RowLayout {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 Layout.fillWidth: true
-                Image {
+                Avatar {
                     Layout.preferredWidth: 72
                     Layout.preferredHeight: 72
-                    fillMode: Image.PreserveAspectCrop
-                    source: {
-                        let p = win.get("profile", "avatar", win.account.avatar);
-                        return p ? "file://" + p : "";
-                    }
-                    sourceSize: Qt.size(144, 144)
+                    source: { const p = win.get("profile", "avatar", win.account.avatar); return p ? "file://" + p : ""; }
                 }
                 ColumnLayout {
                     Label {
@@ -1058,8 +959,8 @@ ApplicationWindow {
             }
             JsonForm {
                 Layout.fillWidth: true
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 documentId: "profile"
                 fields: [
                     {
@@ -1071,97 +972,16 @@ ApplicationWindow {
                 ]
             }
             Note {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
+                Layout.leftMargin: 0
+                Layout.rightMargin: 0
                 text: "Home folder: " + win.account.home
             }
             ArchiveButton {
-                Layout.leftMargin: 22 * Theme.density
+                Layout.leftMargin: 0
                 text: "Change login password…"
                 onClicked: Store.launch("password")
             }
         }
     }
-    Component {
-        id: autostart
-        ColumnLayout {
-            width: parent.width
-            spacing: 18
-            Note {
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
-                text: "Additional apps to launch when you log into TideWM. Existing startup commands stay in config.wave. Applying this list does not launch anything immediately."
-            }
-            Repeater {
-                model: win.startup()
-                RowLayout {
-                    required property var modelData
-                    required property int index
-                    Layout.fillWidth: true
-                    Layout.leftMargin: 22 * Theme.density
-                    Layout.rightMargin: 22 * Theme.density
-                    ArchiveSwitch {
-                        checked: modelData.enabled !== false
-                        onToggled: {
-                            let a = win.startup();
-                            a[index].enabled = checked;
-                            Store.setAutostart(a);
-                        }
-                    }
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        Label {
-                            text: modelData.name || modelData.command
-                            color: Theme.text
-                        }
-                        Label {
-                            text: modelData.command
-                            color: Theme.subtext
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-                    }
-                    ArchiveButton {
-                        text: "Remove"
-                        onClicked: {
-                            let a = win.startup();
-                            a.splice(index, 1);
-                            Store.setAutostart(a);
-                        }
-                    }
-                }
-            }
-            ColumnLayout {
-                Layout.fillWidth: true
-                Layout.leftMargin: 22 * Theme.density
-                Layout.rightMargin: 22 * Theme.density
-                spacing: 8
-                ArchiveTextField {
-                    id: startupName
-                    Layout.fillWidth: true
-                    placeholderText: "App name"
-                }
-                ArchiveTextField {
-                    id: startupCommand
-                    Layout.fillWidth: true
-                    placeholderText: "Command, for example: firefox"
-                }
-                ArchiveButton {
-                    text: "Add startup app"
-                    enabled: startupCommand.text.trim() !== ""
-                    onClicked: {
-                        let a = win.startup();
-                        a.push({
-                            name: startupName.text.trim(),
-                            command: startupCommand.text.trim(),
-                            enabled: true
-                        });
-                        Store.setAutostart(a);
-                        startupName.clear();
-                        startupCommand.clear();
-                    }
-                }
-            }
-        }
-    }
+    Component { id: autostart; StartupPage {} }
 }

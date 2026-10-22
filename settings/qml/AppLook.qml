@@ -10,11 +10,14 @@ ColumnLayout {
     ColorDialog {
         id: picker
         property string key
-        onAccepted: Store.setValue("settings", key, selectedColor.toString())
+        onAccepted: {
+            if (key === "accent") Store.setAccent(selectedColor.toString());
+            else Store.setValue("settings", key, selectedColor.toString());
+        }
     }
     SettingGroup {
-        Layout.leftMargin: 22 * Theme.density
-        Layout.rightMargin: 22 * Theme.density
+        Layout.leftMargin: 0
+        Layout.rightMargin: 0
         title: "background"
         configSection: "settings.background"
         GridLayout {
@@ -94,8 +97,8 @@ ColumnLayout {
     }
     GridLayout {
         Layout.fillWidth: true
-        Layout.leftMargin: 22 * Theme.density
-        Layout.rightMargin: 22 * Theme.density
+        Layout.leftMargin: 0
+        Layout.rightMargin: 0
         columns: root.width >= 900 ? 2 : 1
         columnSpacing: 16
         rowSpacing: 16
@@ -116,10 +119,16 @@ ColumnLayout {
             title: "surfaces & glow"
             configSection: "settings.surfaces"
             documentId: "settings"
+            ArchiveButton {
+                text: "Theme accent · " + Theme.accent.toString()
+                Layout.fillWidth: true
+                onClicked: { picker.key = "accent"; picker.selectedColor = Theme.accent; picker.open(); }
+                ToolTip.visible: hovered
+                ToolTip.text: "One accent for the shell and settings. Changing a shipped theme creates an editable copy."
+            }
             fields: [
                 {title: "glass", key: "glass", kind: "slider", fallback: 3, max: 15, unit: "%"},
                 {title: "glow strength", key: "glowStrength", kind: "slider", fallback: 15, max: 40, unit: "%"},
-                {title: "glow colour", key: "glowSource", kind: "choice", fallback: "cyan", choices: ["cyan", "accent", "rose"].map(v => ({value: v, label: v}))},
                 {title: "selected page", key: "selectionStyle", kind: "choice", fallback: "edge", choices: [{value: "edge", label: "lit edge"}, {value: "filled", label: "filled"}, {value: "underline", label: "underline"}]}
             ]
         }
@@ -136,8 +145,8 @@ ColumnLayout {
         }
     }
     RowLayout {
-        Layout.leftMargin: 22 * Theme.density
-        Layout.rightMargin: 22 * Theme.density
+        Layout.leftMargin: 0
+        Layout.rightMargin: 0
         Layout.fillWidth: true
         ArchiveButton { text: "reset to theme"; onClicked: Store.resetAppLook() }
         ArchiveButton {

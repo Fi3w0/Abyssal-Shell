@@ -14,7 +14,7 @@ QtObject {
     }
     readonly property string themeId: {
         revision;
-        return Store.value("appearance", "theme", "abyssal-tide");
+        return Store.value("appearance", "fromWallpaper", false) && Store.themes.some(t => t.id === "wallpaper") ? "wallpaper" : Store.value("appearance", "theme", "abyssal-tide");
     }
     readonly property var theme: {
         revision;
@@ -36,14 +36,14 @@ QtObject {
     property color warn: colors.warn || accent
     property color danger: colors.danger || accent
     property color success: colors.success || accent
-    property color glow: ({cyan: cyan, accent: accent, rose: rose})[setting("glowSource", "cyan")] || cyan
+    readonly property color glow: accent
     readonly property color edge: colors.hairline || alpha(text, 0.09)
     readonly property color glass: alpha(text, setting("glass", 3) / 100)
     readonly property color deep: colors.chip || alpha(crust, 0.7)
     readonly property color bar: alpha(crust, 0.8)
     readonly property color side: alpha(crust, 0.4)
-    readonly property color glowSoft: colors.accentSoft || alpha(glow, setting("glowStrength", 15) / 100)
-    readonly property color glowEdge: colors.controlEdge || alpha(glow, 0.33)
+    readonly property color glowSoft: alpha(glow, setting("glowStrength", 15) / 100)
+    readonly property color glowEdge: alpha(glow, 0.33)
     readonly property color backdropTop: {
         revision;
         return Store.value("theme:" + themeId, "backdrop.top", colors.backdropTop || Qt.lighter(mix(base, glow, 0.14), 1.06));
@@ -85,5 +85,4 @@ QtObject {
     Behavior on warn { ColorAnimation { duration: root.reduceMotion ? 80 : 300 } }
     Behavior on danger { ColorAnimation { duration: root.reduceMotion ? 80 : 300 } }
     Behavior on success { ColorAnimation { duration: root.reduceMotion ? 80 : 300 } }
-    Behavior on glow { ColorAnimation { duration: root.reduceMotion ? 80 : 300 } }
 }

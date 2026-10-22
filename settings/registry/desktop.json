@@ -1,0 +1,611 @@
+[
+  {
+    "id": "windows",
+    "title": "Windows & workspaces",
+    "description": "Choose how windows arrange themselves, then tune the space around them.",
+    "groups": [
+      {
+        "title": "Layout",
+        "rows": [
+          {
+            "key": "engine",
+            "title": "Layout engine",
+            "kind": "engine",
+            "default": "classic",
+            "choices": [
+              {
+                "value": "classic",
+                "label": "classic"
+              },
+              {
+                "value": "scroll",
+                "label": "scroll"
+              },
+              {
+                "value": "ocean",
+                "label": "ocean"
+              }
+            ]
+          },
+          {
+            "key": "layout",
+            "title": "Classic layout",
+            "kind": "choice",
+            "default": "bsp",
+            "choices": [
+              {
+                "value": "bsp",
+                "label": "Balanced tiles"
+              },
+              {
+                "value": "master",
+                "label": "Main window & stack"
+              },
+              {
+                "value": "cascade",
+                "label": "Cascade"
+              },
+              {
+                "value": "floating",
+                "label": "Floating windows"
+              }
+            ],
+            "engine": "classic"
+          },
+          {
+            "key": "gaps",
+            "title": "Space between windows",
+            "kind": "slider",
+            "default": 8,
+            "min": 0,
+            "max": 64,
+            "unit": " px"
+          },
+          {
+            "key": "auto_back_and_forth",
+            "title": "Return to the previous workspace",
+            "kind": "bool",
+            "default": false,
+            "hint": "Selecting the current workspace again takes you back."
+          }
+        ]
+      },
+      {
+        "title": "Scrolling columns",
+        "rows": [
+          {
+            "key": "scroll.tile_proportion",
+            "title": "New column width",
+            "kind": "slider",
+            "default": 0.5,
+            "min": 10,
+            "max": 100,
+            "scale": 100,
+            "unit": "%"
+          },
+          {
+            "key": "scroll.center_focused",
+            "title": "Centre the focused column",
+            "kind": "choice",
+            "default": "never",
+            "choices": [
+              {
+                "value": "never",
+                "label": "Only move enough to reveal it"
+              },
+              {
+                "value": "on-overflow",
+                "label": "When partly hidden"
+              },
+              {
+                "value": "always",
+                "label": "Always centre"
+              }
+            ]
+          },
+          {
+            "key": "scroll.always_center_single",
+            "title": "Centre a lone column",
+            "kind": "bool",
+            "default": false
+          },
+          {
+            "key": "scroll.preset_widths",
+            "title": "Column width shortcuts",
+            "kind": "presets",
+            "default": [
+              0.333,
+              0.5,
+              0.667
+            ],
+            "hint": "Widths cycled by your preset-width shortcut."
+          }
+        ],
+        "engine": "scroll"
+      },
+      {
+        "title": "Borders & corners",
+        "rows": [
+          {
+            "key": "border.width",
+            "title": "Border width",
+            "kind": "slider",
+            "default": 2,
+            "min": 0,
+            "max": 12,
+            "unit": " px"
+          },
+          {
+            "key": "rounding.radius",
+            "title": "Corner rounding",
+            "kind": "slider",
+            "default": 12,
+            "min": 0,
+            "max": 40,
+            "unit": " px"
+          },
+          {
+            "key": "border.animate",
+            "title": "Animate the focus border",
+            "kind": "bool",
+            "default": false,
+            "hint": "Uses the colours of your desktop theme."
+          },
+          {
+            "key": "shadow.softness",
+            "title": "Shadow softness",
+            "kind": "slider",
+            "default": 28,
+            "min": 0,
+            "max": 80,
+            "unit": " px"
+          }
+        ]
+      },
+      {
+        "title": "Ocean canvas",
+        "rows": [
+          {
+            "key": "ocean.zoom_enabled",
+            "title": "Enable zoom",
+            "kind": "bool",
+            "default": true
+          },
+          {
+            "key": "ocean.shared_canvas",
+            "title": "Share the canvas between displays",
+            "kind": "bool",
+            "default": false
+          },
+          {
+            "key": "ocean.canvas_guides",
+            "title": "Show canvas guides",
+            "kind": "bool",
+            "default": true
+          },
+          {
+            "key": "ocean.camera_step",
+            "title": "Pan distance",
+            "kind": "number",
+            "default": 480,
+            "min": 40,
+            "max": 2000,
+            "unit": " px"
+          }
+        ],
+        "engine": "ocean"
+      }
+    ]
+  },
+  {
+    "id": "motion",
+    "title": "Motion & effects",
+    "description": "Adjust movement with presets and simple controls. Changes apply when you save.",
+    "groups": [
+      {
+        "title": "Motion",
+        "rows": [
+          {
+            "key": "animations.enabled",
+            "title": "Window animations",
+            "kind": "bool",
+            "default": true
+          },
+          {
+            "key": "animations.preset",
+            "title": "Animation feel",
+            "kind": "choice",
+            "default": "tide",
+            "choices": [
+              {
+                "value": "tide",
+                "label": "tide"
+              },
+              {
+                "value": "wave",
+                "label": "wave"
+              },
+              {
+                "value": "riptide",
+                "label": "riptide"
+              },
+              {
+                "value": "hypr-smooth",
+                "label": "hypr smooth"
+              },
+              {
+                "value": "silk",
+                "label": "silk"
+              },
+              {
+                "value": "snappy",
+                "label": "snappy"
+              },
+              {
+                "value": "gentle",
+                "label": "gentle"
+              },
+              {
+                "value": "cinematic",
+                "label": "cinematic"
+              },
+              {
+                "value": "minimal",
+                "label": "minimal"
+              }
+            ],
+            "presetValues": {
+              "tide": {
+                "enabled": true,
+                "slowdown": 1,
+                "open.duration": "190ms",
+                "close.duration": "160ms",
+                "movement.duration": "190ms",
+                "workspace.duration": "220ms",
+                "workspace.enabled": false,
+                "workspace.style": "slide-fade"
+              },
+              "wave": {
+                "enabled": true,
+                "slowdown": 1,
+                "open.duration": "280ms",
+                "close.duration": "230ms",
+                "movement.duration": "250ms",
+                "workspace.duration": "220ms",
+                "workspace.enabled": false,
+                "workspace.style": "slide-fade"
+              },
+              "riptide": {
+                "enabled": true,
+                "slowdown": 1,
+                "open.duration": "155ms",
+                "close.duration": "135ms",
+                "movement.duration": "165ms",
+                "workspace.duration": "220ms",
+                "workspace.enabled": false,
+                "workspace.style": "slide-fade"
+              },
+              "hypr-smooth": {
+                "enabled": true,
+                "slowdown": 1,
+                "open.duration": "300ms",
+                "close.duration": "300ms",
+                "movement.duration": "400ms",
+                "workspace.duration": "220ms",
+                "workspace.enabled": false,
+                "workspace.style": "slide-fade"
+              },
+              "silk": {
+                "enabled": true,
+                "slowdown": 1,
+                "open.duration": "170ms",
+                "close.duration": "140ms",
+                "movement.duration": "200ms",
+                "workspace.duration": "220ms",
+                "workspace.enabled": true,
+                "workspace.style": "slide-fade"
+              },
+              "snappy": {
+                "enabled": true,
+                "slowdown": 1,
+                "open.duration": "120ms",
+                "close.duration": "100ms",
+                "movement.duration": "140ms",
+                "workspace.duration": "150ms",
+                "workspace.enabled": true,
+                "workspace.style": "slide-fade"
+              },
+              "gentle": {
+                "enabled": true,
+                "slowdown": 1,
+                "open.duration": "240ms",
+                "close.duration": "200ms",
+                "movement.duration": "260ms",
+                "workspace.duration": "280ms",
+                "workspace.enabled": true,
+                "workspace.style": "slide-fade"
+              },
+              "cinematic": {
+                "enabled": true,
+                "slowdown": 1,
+                "open.duration": "320ms",
+                "close.duration": "260ms",
+                "movement.duration": "340ms",
+                "workspace.duration": "360ms",
+                "workspace.enabled": true,
+                "workspace.style": "slide-fade"
+              },
+              "minimal": {
+                "enabled": true,
+                "slowdown": 1,
+                "open.duration": "100ms",
+                "close.duration": "90ms",
+                "movement.duration": "110ms",
+                "workspace.duration": "130ms",
+                "workspace.enabled": true,
+                "workspace.style": "fade"
+              }
+            },
+            "hint": "Choose a complete feel. Resets timing adjustments made here."
+          },
+          {
+            "key": "animations.slowdown",
+            "title": "Animation duration",
+            "kind": "slider",
+            "default": 1,
+            "min": 25,
+            "max": 300,
+            "scale": 100,
+            "unit": "%"
+          },
+          {
+            "key": "water_effects",
+            "title": "Water effects",
+            "kind": "bool",
+            "default": true,
+            "hint": "Enables TideWM’s liquid effects, including water transitions and window sway."
+          }
+        ]
+      },
+      {
+        "title": "Window transitions",
+        "rows": [
+          {
+            "key": "animations.open.duration",
+            "title": "Opening windows",
+            "kind": "slider",
+            "default": 190,
+            "min": 0,
+            "max": 1000,
+            "unit": " ms",
+            "suffix": "ms"
+          },
+          {
+            "key": "animations.close.duration",
+            "title": "Closing windows",
+            "kind": "slider",
+            "default": 160,
+            "min": 0,
+            "max": 1000,
+            "unit": " ms",
+            "suffix": "ms"
+          },
+          {
+            "key": "animations.movement.duration",
+            "title": "Rearranging windows",
+            "kind": "slider",
+            "default": 190,
+            "min": 0,
+            "max": 1000,
+            "unit": " ms",
+            "suffix": "ms"
+          },
+          {
+            "key": "viscosity",
+            "title": "Drag softness",
+            "kind": "slider",
+            "default": 1,
+            "min": 0,
+            "max": 400,
+            "scale": 100,
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "title": "Workspace transitions",
+        "rows": [
+          {
+            "key": "animations.workspace.enabled",
+            "title": "Animate workspace changes",
+            "kind": "bool",
+            "default": false
+          },
+          {
+            "key": "animations.workspace.style",
+            "title": "Transition style",
+            "kind": "choice",
+            "default": "slide-fade",
+            "choices": [
+              {
+                "value": "fade",
+                "label": "fade"
+              },
+              {
+                "value": "slide",
+                "label": "slide"
+              },
+              {
+                "value": "slide-fade",
+                "label": "slide fade"
+              }
+            ]
+          },
+          {
+            "key": "animations.workspace.duration",
+            "title": "Transition duration",
+            "kind": "slider",
+            "default": 220,
+            "min": 0,
+            "max": 1000,
+            "unit": " ms",
+            "suffix": "ms"
+          },
+          {
+            "key": "transition.enabled",
+            "title": "Water transition overlay",
+            "kind": "bool",
+            "default": false,
+            "hint": "The water overlay takes priority over the simple transition above."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "input",
+    "title": "Keyboard & touchpad",
+    "description": "Pick your keyboard layouts, test repeat speed and adjust touchpad behaviour.",
+    "groups": [
+      {
+        "title": "Keyboard",
+        "rows": [
+          {
+            "key": "input.xkb_layout",
+            "title": "Keyboard layouts",
+            "kind": "layouts",
+            "default": "us"
+          },
+          {
+            "key": "input.repeat_delay",
+            "title": "Delay before repeating",
+            "kind": "slider",
+            "default": 200,
+            "min": 100,
+            "max": 1000,
+            "unit": " ms"
+          },
+          {
+            "key": "input.repeat_rate",
+            "title": "Repeat speed",
+            "kind": "slider",
+            "default": 25,
+            "min": 1,
+            "max": 80,
+            "unit": " keys/s"
+          }
+        ]
+      },
+      {
+        "title": "Focus",
+        "rows": [
+          {
+            "key": "input.focus_follows_mouse",
+            "title": "Focus windows under the pointer",
+            "kind": "bool",
+            "default": true
+          },
+          {
+            "key": "input.unfocus_on_empty",
+            "title": "Unfocus over empty desktop",
+            "kind": "bool",
+            "default": false
+          },
+          {
+            "key": "cursor_always_visible",
+            "title": "Keep the pointer visible",
+            "kind": "bool",
+            "default": false,
+            "hint": "Overrides apps that hide their pointer while typing."
+          }
+        ]
+      },
+      {
+        "title": "Touchpad",
+        "rows": [
+          {
+            "key": "input.touchpad.tap_to_click",
+            "title": "Tap to click",
+            "kind": "bool",
+            "default": null,
+            "deviceDefault": true
+          },
+          {
+            "key": "input.touchpad.tap_and_drag",
+            "title": "Tap and drag",
+            "kind": "bool",
+            "default": null,
+            "deviceDefault": true
+          },
+          {
+            "key": "input.touchpad.disable_while_typing",
+            "title": "Disable while typing",
+            "kind": "bool",
+            "default": null,
+            "deviceDefault": true
+          },
+          {
+            "key": "input.touchpad.natural_scroll",
+            "title": "Natural scrolling",
+            "kind": "bool",
+            "default": null,
+            "deviceDefault": true
+          },
+          {
+            "key": "input.touchpad.left_handed",
+            "title": "Left-handed buttons",
+            "kind": "bool",
+            "default": null,
+            "deviceDefault": true
+          },
+          {
+            "key": "input.touchpad.accel_speed",
+            "title": "Pointer speed",
+            "kind": "slider",
+            "default": null,
+            "min": -100,
+            "max": 100,
+            "scale": 100,
+            "unit": "%",
+            "deviceDefault": true
+          },
+          {
+            "key": "input.touchpad.accel_profile",
+            "title": "Acceleration",
+            "kind": "choice",
+            "default": null,
+            "choices": [
+              {
+                "value": "adaptive",
+                "label": "adaptive"
+              },
+              {
+                "value": "flat",
+                "label": "flat"
+              }
+            ],
+            "deviceDefault": true
+          },
+          {
+            "key": "input.touchpad.click_method",
+            "title": "Click method",
+            "kind": "choice",
+            "default": null,
+            "choices": [
+              {
+                "value": "button-areas",
+                "label": "Physical button areas"
+              },
+              {
+                "value": "clickfinger",
+                "label": "Number of fingers"
+              }
+            ],
+            "deviceDefault": true
+          }
+        ],
+        "hint": "Applies to physical touchpads. Devices without this capability are unaffected."
+      }
+    ]
+  }
+]

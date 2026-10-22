@@ -64,19 +64,25 @@ the shell builds nothing (binds go in the user's TideWM config, not here).
 
 Goal: a real settings app a user can live in instead of editing config,
 good-looking, following the active theme, without the odd options.
-1. [ ] Audit the current app: every option, where it writes, keep / merge /
-       drop. Show Fiw the list.
+1. [x] Audit the current app: every option, where it writes, keep / merge /
+       drop. Show Fiw the list. Inventory and decisions: settings/docs/AUDIT.md.
 2. [x] Propose the structure (category tree like System, Devices, Network,
        Personalisation, Windows & workspaces, Apps, Updates, About) and a
        look; mock-up for Fiw to approve.
 3. [ ] Rebuild on the approved design; theme from the active Abyssal theme.
-       Drowned archive foundation and This app are implemented; eleven original
-       pages retained. Registry, full inventory and compositor forms remain.
-       Approved references: settings/docs/design; state: settings/docs/STATUS.md.
+       Drowned archive and graphical Desktop/Input, panel controls, shortcut
+       recording and installed-app startup choices are implemented. Raw editors
+       are confined to Expert; shared glow follows the actual theme accent.
+       Wider system inventory remains. Audit: settings/docs/AUDIT.md.
 4. [ ] Search across every setting, with synonyms and recent searches.
+       Desktop rows and shortcuts are searchable; global indexing/history remain.
 5. [ ] Window and workspace pages drive TideWM through Wave/IPC (engine,
        Scroll widths/presets/centering, animations, binds), validated before
        writing, never Plasma config.
+       Engine/layout, Scroll widths/presets/centring, gaps/decorations, motion,
+       input and shortcut forms now save through validated Wave edits. Tested
+       against the installed TideWM in an isolated nested session. Window rules,
+       display arrangement and remaining compositor controls still need forms.
 
 ### Layer 2 — system pieces
 

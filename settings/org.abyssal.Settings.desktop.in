@@ -2,7 +2,7 @@
 Type=Application
 Name=Abyssal Settings
 Comment=Configure the Abyssal desktop and TideWM
-Exec=abyssal-settings
+Exec="@CMAKE_INSTALL_FULL_BINDIR@/abyssal-settings"
 Icon=org.abyssal.Settings
 Categories=Settings;DesktopSettings;
 StartupWMClass=org.abyssal.Settings

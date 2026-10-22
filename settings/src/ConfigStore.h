@@ -1,7 +1,9 @@
 #pragma once
+#include <QFileSystemWatcher>
 #include <QJsonObject>
 #include <QMap>
 #include <QObject>
+#include <QTimer>
 #include <QVariant>
 
 class ConfigStore : public QObject {
@@ -12,6 +14,9 @@ class ConfigStore : public QObject {
   Q_PROPERTY(int dirtyCount READ dirtyCount NOTIFY changed)
   Q_PROPERTY(QString message READ message NOTIFY messageChanged)
   Q_PROPERTY(QString shellRoot READ shellRoot CONSTANT)
+  Q_PROPERTY(QVariantList desktopPages READ desktopPages CONSTANT)
+  Q_PROPERTY(bool desktopEditable READ desktopEditable CONSTANT)
+  Q_PROPERTY(bool externalChange READ externalChange NOTIFY changed)
 public:
   explicit ConfigStore(QString root, QObject *parent = nullptr);
   QVariantList documents() const;
@@ -20,6 +25,7 @@ public:
   int dirtyCount() const;
   QString message() const { return m_message; }
   QString shellRoot() const { return m_root; }
+  bool externalChange() const { return m_externalChange; }
   Q_INVOKABLE QVariant value(QString id, QString key,
                              QVariant fallback = {}) const;
   Q_INVOKABLE void setValue(QString id, QString key, QVariant value);
@@ -31,6 +37,15 @@ public:
   Q_INVOKABLE QVariantMap account() const;
   Q_INVOKABLE QString copyTheme(QString id);
   Q_INVOKABLE void resetAppLook();
+  QVariantList desktopPages() const;
+  bool desktopEditable() const;
+  Q_INVOKABLE QVariant desktopValue(QString key, QVariant fallback = {}) const;
+  Q_INVOKABLE bool setDesktopValue(QString key, QVariant value);
+  Q_INVOKABLE QVariantList keyboardLayouts() const;
+  Q_INVOKABLE bool setAccent(QString color);
+  Q_INVOKABLE QVariantList applications() const;
+  Q_INVOKABLE QString shortcutName(int key, int modifiers) const;
+  Q_INVOKABLE bool addShortcut(QString chord, QString action);
   Q_INVOKABLE bool apply();
   Q_INVOKABLE void reload();
   Q_INVOKABLE void launch(QString action);
@@ -45,6 +60,11 @@ private:
   };
   QString m_root, m_home, m_state, m_message;
   QMap<QString, Document> m_docs;
+  mutable bool m_waveCacheValid = false;
+  mutable QMap<QString, QString> m_waveValues;
+  QFileSystemWatcher m_watcher;
+  QTimer m_externalTimer;
+  bool m_externalChange = false;
   void load(QString id, QString label, QString path, bool readonly = false);
   void loadWave(QString path, int depth = 0);
   void report(QString message);
@@ -52,6 +72,8 @@ private:
   bool unchanged(const Document &doc) const;
   static QString read(QString path);
   static QJsonObject json(const Document &doc);
+  static QString waveValidator();
+  static QVariant fromUi(QVariant value);
 signals:
   void changed();
   void messageChanged();
