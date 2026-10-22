@@ -158,8 +158,8 @@ Singleton {
 
     // A popup page (wifi, clipboard, updates…) centred on the first panel of
     // the monitor you are working on: for keybinds and the launcher.
-    function openPage(page) {
-        const out = targetOutput()
+    function openPage(page, output) {
+        const out = output || targetOutput()
         const panel = PanelLayout.panelsFor(out)[0]
         const screen = Quickshell.screens.find(s => s.name === out)
         if (!panel || !screen) return
@@ -224,6 +224,37 @@ Singleton {
         return Tide.focusedOutput !== "" ? Tide.focusedOutput : (Quickshell.screens[0]?.name ?? "")
     }
 
+    // Runs `fn(output)` with the monitor under the mouse, so the launcher
+    // and other keybind overlays open where you are looking even when
+    // nothing (or a window on the other monitor) has focus. Falls back to
+    // targetOutput() when the compositor cannot answer.
+    property var pointerWaiters: []
+    function atPointer(fn) {
+        pointerWaiters = pointerWaiters.concat([fn])
+        if (!pointerQuery.running) pointerQuery.running = true
+    }
+    function resolvePointer(name) {
+        const out = Quickshell.screens.some(s => s.name === name) ? name : targetOutput()
+        const waiters = pointerWaiters
+        pointerWaiters = []
+        for (const fn of waiters) fn(out)
+    }
+    Process {
+        id: pointerQuery
+        command: ["tidectl", "--json", "pointer-output"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let name = ""
+                try {
+                    const r = JSON.parse(text)
+                    if (r.ok && r.data) name = r.data.name
+                } catch (e) {}
+                root.resolvePointer(name)
+            }
+        }
+        onExited: (code) => { if (root.pointerWaiters.length) root.resolvePointer("") }
+    }
+
     // "Open file" dialogs go through the desktop portal (scripts/
     // abyssal-session sets QT_QPA_PLATFORMTHEME=xdgdesktopportal for Abyssal
     // only); this picks the portal's file chooser to match the file manager
@@ -270,7 +301,7 @@ Singleton {
     // qs -c abyssal ipc call power toggle
     IpcHandler {
         target: "power"
-        function toggle(): void { root.togglePower(root.targetOutput()) }
+        function toggle(): void { root.atPointer(out => root.togglePower(out)) }
         function close(): void { root.powerOn = "" }
     }
 
@@ -282,13 +313,13 @@ Singleton {
         function edit(): void { root.setEditing(true) }
         function done(): void { root.setEditing(false) }
         function lock(): void { root.lock() }
-        function launcher(): void { root.toggleLauncher(root.targetOutput()) }
-        function wallpapers(): void { root.toggleWallpaperPicker(root.targetOutput()) }
+        function launcher(): void { root.atPointer(out => root.toggleLauncher(out)) }
+        function wallpapers(): void { root.atPointer(out => root.toggleWallpaperPicker(out)) }
         function settings(): void { root.settings() }
         // Alt+Tab: opens the switcher, or moves to the next window in it.
         function switcher(): void {
             if (root.switcherOn !== "") root.switcherStep(1)
-            else root.switcherOn = root.targetOutput()
+            else root.atPointer(out => root.switcherOn = out)
         }
         function switcherCancel(): void { root.switcherOn = "" }
         function widgets(): void { if (root.editing) root.sidebarOpen = true }
@@ -296,12 +327,13 @@ Singleton {
         function preset(name: string): void { PanelLayout.applyPreset(root.targetOutput(), name) }
         // Quick menu next to the first panel of the monitor you are working on
         function quick(): void {
-            const out = root.targetOutput()
-            const panel = PanelLayout.panelsFor(out)[0]
-            root.toggleQuickSettings(out, panel ? panel.edge : "top")
+            root.atPointer(out => {
+                const panel = PanelLayout.panelsFor(out)[0]
+                root.toggleQuickSettings(out, panel ? panel.edge : "top")
+            })
         }
         // wifi | bluetooth | sound, centred on the first panel of the
         // monitor you are working on (for keybinds; widgets open their own)
-        function open(page: string): void { root.openPage(page) }
+        function open(page: string): void { root.atPointer(out => root.openPage(page, out)) }
     }
 }
