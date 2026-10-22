@@ -1,5 +1,6 @@
 #include "../src/ConfigStore.h"
 #include <QDir>
+#include <QColor>
 #include <QFile>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -118,6 +119,82 @@ private slots:
     QCOMPARE(store.dirtyCount(), 0);
     QCOMPARE(store.value("appearance", "theme").toString(), theme);
     QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join('\n')));
+    window->hide();
+  }
+  void themeAndPanelPresets() {
+    warnings.clear();
+    write(config + "/abyssal/appearance.json", R"({"theme":"abyssal-tide"})");
+    write(config + "/abyssal/settings.json", R"({"reduceMotion":true})");
+    write(config + "/abyssal/layout.json", R"({"version":2,"monitors":{"*":{"panels":[]}}})");
+    ConfigStore store(SETTINGS_SOURCE_ROOT);
+    QQmlApplicationEngine engine;
+    engine.rootContext()->setContextProperty("Store", &store);
+    engine.rootContext()->setContextProperty("initialPage", "appearance");
+    engine.load(QUrl("qrc:/qml/Main.qml"));
+    QVERIFY2(!engine.rootObjects().isEmpty(), qPrintable(warnings.join('\n')));
+    auto window = qobject_cast<QQuickWindow *>(engine.rootObjects().first());
+    QVERIFY(window);
+    window->resize(QSize(1180, 1400));
+    QTest::qWait(100);
+    auto control = [&](const QString &name) { return findItem(window->contentItem(), name); };
+    auto click = [&](const QString &name) {
+      auto item = control(name);
+      QVERIFY2(item, qPrintable(name));
+      QVERIFY2(item->isVisible(), qPrintable(name));
+      QTest::mouseClick(window, Qt::LeftButton, Qt::NoModifier,
+                       item->mapToScene(item->boundingRect().center()).toPoint());
+      QTest::qWait(30);
+    };
+    auto type = [&](const QString &name, const QString &text) {
+      auto item = control(name);
+      QVERIFY2(item, qPrintable(name));
+      item->forceActiveFocus();
+      QTest::keyClick(window, Qt::Key_A, Qt::ControlModifier);
+      for (const auto character : text.toLatin1())
+        QTest::keyClick(window, character);
+    };
+    type("colourHex", "#12ab34");
+    QTest::keyClick(window, Qt::Key_Return);
+    QTest::qWait(50);
+    const auto theme = store.value("appearance", "theme").toString();
+    QVERIFY(theme != "abyssal-tide");
+    QCOMPARE(store.value("theme:" + theme, "colors.accent").toString(), "#12ab34");
+    click("colourPlane");
+    const QColor picked(store.value("theme:" + theme, "colors.accent").toString());
+    QVERIFY(qAbs(picked.hsvSaturationF() - .5) < .03);
+    QVERIFY(qAbs(picked.valueF() - .5) < .03);
+    auto hue = control("colourHue");
+    QVERIFY(hue);
+    hue->forceActiveFocus();
+    QTest::keyClick(window, Qt::Key_Home);
+    QTest::qWait(30);
+    const QColor redHue(store.value("theme:" + theme, "colors.accent").toString());
+    QVERIFY(redHue.hsvHueF() < .01);
+    type("colourHex", "#12ab34");
+    QTest::keyClick(window, Qt::Key_Return);
+    click("themeSaveAs");
+    type("themePresetName", "UI ocean");
+    click("themeSavePreset");
+    const auto savedTheme = store.value("appearance", "theme").toString();
+    QCOMPARE(store.value("theme:" + savedTheme, "name").toString(), "UI ocean");
+    window->setProperty("page", "panels");
+    QTest::qWait(50);
+    click("addPanel");
+    click("panelsSaveAs");
+    type("panelsPresetName", "UI panels");
+    click("panelsSavePreset");
+    const auto snapshots = store.panelPresets();
+    QVERIFY(!snapshots.isEmpty());
+    click("addPanel");
+    QCOMPARE(store.value("layout", "monitors").toMap()["*"].toMap()["panels"].toList().size(), 2);
+    click("loadPanelPreset");
+    QCOMPARE(store.value("layout", "monitors").toMap()["*"].toMap()["panels"].toList().size(), 1);
+    QVERIFY2(warnings.isEmpty(), qPrintable(warnings.join('\n')));
+    QVERIFY(store.apply());
+    store.reload();
+    QCOMPARE(store.value("appearance", "theme").toString(), savedTheme);
+    QCOMPARE(store.value("theme:" + savedTheme, "colors.accent").toString(), "#12ab34");
+    QCOMPARE(store.panelPresets().size(), snapshots.size());
     window->hide();
   }
   void minimizeAndRestore() {

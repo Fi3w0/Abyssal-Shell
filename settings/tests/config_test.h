@@ -31,4 +31,7 @@ private slots:
   void externalChangesReloadWithoutLosingDrafts();
   void deviceSettingsCanBeRestored();
   void qmlObjectsAndArraysRemainStructured();
+  void themePresetsRoundTrip();
+  void panelPresetsRoundTrip();
+  void invalidPresetsDoNotChangeDrafts();
 };

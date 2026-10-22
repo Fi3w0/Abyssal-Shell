@@ -36,9 +36,13 @@ and a preview, shortcuts record keys and choose actions/apps, and startup apps
 uses an installed-app picker. See docs/AUDIT.md for storage and scope.
 
 
-- Theme selection, editable theme copies, colour pickers, opacity and rounding.
+- Theme selection, automatic editable copies, inline HSV/hex colour editing,
+  named theme presets, JSON import/export, contrast checks and a desktop preview.
+  Theme opacity and rounding update the preview and saved theme.
 - Wallpaper selection per detected output, transition recipes and duration.
-- Panel controls and preview, with access to the existing live widget editor.
+- Panel controls and display previews, named layout snapshots, JSON import/export,
+  and preview before loading. Widget options and output names survive round trips.
+  Widget arrangement remains in the existing live editor.
 - Record/change single-line shortcuts from config.wave and static Wave includes.
 - Graphical TideWM settings plus Expert file editing, preserving comments and unknown keys.
 - Startup apps: add, enable/disable and remove. Additional apps are written to
@@ -54,6 +58,10 @@ when saving, uses QSaveFile and creates private backups plus a path manifest
 under `$XDG_STATE_HOME/abyssal/settings-backups`. If a later write fails, earlier
 writes are rolled back when they still match this app's write. Other edits are
 not overwritten during rollback. Reload/close asks before discarding drafts.
+
+The user-provided 47-page coverage reference and current scope are recorded in
+[docs/SETTINGS-MAP.md](docs/SETTINGS-MAP.md). Preset creation/loading stays in the
+draft until Save changes; Export writes the explicitly selected file immediately.
 
 ## Next development
 

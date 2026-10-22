@@ -128,6 +128,10 @@ void ConfigStore::reload() {
     load("theme:" + QFileInfo(name).completeBaseName(),
          QFileInfo(name).completeBaseName(), user.filePath(name));
   loadWave(m_home + "/tidewm/config.wave");
+  QDir panels(m_home + "/abyssal/panel-presets");
+  for (const auto &name : panels.entryList({"*.json"}, QDir::Files))
+    load("panel-preset:" + QFileInfo(name).completeBaseName(),
+         QFileInfo(name).completeBaseName(), panels.filePath(name));
   if (!m_watcher.files().isEmpty())
     m_watcher.removePaths(m_watcher.files());
   if (!m_watcher.directories().isEmpty())
@@ -137,7 +141,8 @@ void ConfigStore::reload() {
     if (QFileInfo::exists(d.path))
       watched << d.path;
   for (const auto &path :
-       {m_home + "/abyssal", m_home + "/abyssal/themes", m_home + "/tidewm"})
+       {m_home + "/abyssal", m_home + "/abyssal/themes",
+        m_home + "/abyssal/panel-presets", m_home + "/tidewm"})
     if (QFileInfo::exists(path))
       watched << path;
   if (!watched.isEmpty())
@@ -433,6 +438,13 @@ bool ConfigStore::validate(const Document &d, QString &error) const {
       return false;
     }
     const auto o = doc.object();
+    if (d.id.startsWith("theme:") && !validTheme(o, error))
+      return false;
+    if (d.id == "layout" && !o.isEmpty() && !validLayout(o, error))
+      return false;
+    if (d.id.startsWith("panel-preset:") &&
+        !validLayout(o["layout"].toObject(), error))
+      return false;
     auto number = [&](QString key, double minimum, double maximum,
                       bool integer = true) {
       if (!o.contains(key))

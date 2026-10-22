@@ -5,11 +5,13 @@
 #include <QObject>
 #include <QTimer>
 #include <QVariant>
+#include <QUrl>
 
 class ConfigStore : public QObject {
   Q_OBJECT
   Q_PROPERTY(QVariantList documents READ documents NOTIFY changed)
   Q_PROPERTY(QVariantList themes READ themes NOTIFY changed)
+  Q_PROPERTY(QVariantList panelPresets READ panelPresets NOTIFY changed)
   Q_PROPERTY(QVariantList bindings READ bindings NOTIFY changed)
   Q_PROPERTY(int dirtyCount READ dirtyCount NOTIFY changed)
   Q_PROPERTY(QString message READ message NOTIFY messageChanged)
@@ -36,6 +38,14 @@ public:
   Q_INVOKABLE void setAutostart(QVariantList apps);
   Q_INVOKABLE QVariantMap account() const;
   Q_INVOKABLE QString copyTheme(QString id);
+  QVariantList panelPresets() const;
+  Q_INVOKABLE QString saveTheme(QString name);
+  Q_INVOKABLE bool setThemeColor(QString key, QString color);
+  Q_INVOKABLE bool setThemeOption(QString key, QVariant value);
+  Q_INVOKABLE QString savePanelPreset(QString name);
+  Q_INVOKABLE bool loadPanelPreset(QString id);
+  Q_INVOKABLE QString importPreset(QString kind, QUrl file);
+  Q_INVOKABLE bool exportPreset(QString kind, QString id, QUrl file);
   Q_INVOKABLE void resetAppLook();
   QVariantList desktopPages() const;
   bool desktopEditable() const;
@@ -74,6 +84,11 @@ private:
   static QJsonObject json(const Document &doc);
   static QString waveValidator();
   static QVariant fromUi(QVariant value);
+  QString activeThemeId() const;
+  QString editableTheme();
+  QString createPreset(QString kind, QString name, QJsonObject data);
+  static bool validTheme(const QJsonObject &data, QString &error);
+  static bool validLayout(const QJsonObject &data, QString &error);
 signals:
   void changed();
   void messageChanged();

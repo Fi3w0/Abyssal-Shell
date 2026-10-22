@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QFile>
 #include <QJSEngine>
+#include <QJsonDocument>
 #include <QStandardPaths>
 #include <QtTest>
 void ConfigTest::write(QString path, QByteArray data) {
@@ -358,3 +359,94 @@ void ConfigTest::qmlObjectsAndArraysRemainStructured() {
            "Music");
 }
 QTEST_GUILESS_MAIN(ConfigTest)
+
+void ConfigTest::themePresetsRoundTrip() {
+  ConfigStore s(root);
+  const auto shipped = read(root + "/themes/sample.json");
+  QVERIFY(s.setThemeColor("base", "#123456"));
+  const auto editable = s.value("appearance", "theme").toString();
+  QVERIFY(editable != "sample");
+  QCOMPARE(s.value("theme:" + editable, "colors.base").toString(), "#123456");
+  QVERIFY(s.setThemeColor("accent", "#abc123"));
+  QVERIFY(s.setThemeOption("glass", .5));
+  const auto saved = s.saveTheme("My ocean / test");
+  QVERIFY(!saved.isEmpty());
+  QVERIFY(!saved.contains('/'));
+  QCOMPARE(s.value("theme:" + saved, "glass").toDouble(), .5);
+  QVERIFY(!QFileInfo::exists(config + "/abyssal/themes/" + saved + ".json"));
+  const auto output = QUrl::fromLocalFile(temp.path() + "/theme-export.json");
+  QVERIFY(s.exportPreset("theme", "", output));
+  QCOMPARE(read(root + "/themes/sample.json"), shipped);
+  const auto imported = s.importPreset("theme", output);
+  QVERIFY(!imported.isEmpty());
+  QVERIFY(imported != saved);
+  QCOMPARE(s.value("appearance", "theme").toString(), imported);
+  QCOMPARE(s.value("theme:" + imported, "colors.base").toString(), "#123456");
+  QCOMPARE(s.value("theme:" + imported, "tidewm.border").toList(),
+           QVariantList({"#abc123", "#abc123"}));
+  QVERIFY(s.apply());
+  ConfigStore reopened(root);
+  QCOMPARE(reopened.value("appearance", "theme").toString(), imported);
+  QCOMPARE(reopened.value("theme:" + imported, "name").toString(), "My ocean / test");
+  QCOMPARE(reopened.value("theme:" + imported, "glass").toDouble(), .5);
+  QCOMPARE(read(root + "/themes/sample.json"), shipped);
+}
+
+void ConfigTest::panelPresetsRoundTrip() {
+  const QByteArray layout = R"({"version":2,"future":{"keep":true},"monitors":{"DP-1.2":{"panels":[{"edge":"bottom","size":44,"items":[{"id":"clock","date":true},"tray"],"future":42}]},"*":{"panels":[]}}})";
+  write(config + "/abyssal/layout.json", layout);
+  ConfigStore s(root);
+  const auto saved = s.savePanelPreset("Work / wide");
+  QVERIFY(!saved.isEmpty());
+  QCOMPARE(s.panelPresets().size(), 1);
+  QVERIFY(!QFileInfo::exists(config + "/abyssal/panel-presets/" + saved + ".json"));
+  s.setValue("layout", "monitors", QVariantMap{});
+  QVERIFY(s.loadPanelPreset(saved));
+  QCOMPARE(QJsonDocument::fromJson(s.text("layout").toUtf8()), QJsonDocument::fromJson(layout));
+  const auto output = QUrl::fromLocalFile(temp.path() + "/panels-export.json");
+  QVERIFY(s.exportPreset("panels", "", output));
+  const auto imported = s.importPreset("panels", output);
+  QVERIFY(!imported.isEmpty());
+  QCOMPARE(s.panelPresets().size(), 2);
+  s.setValue("layout", "monitors", QVariantMap{});
+  QVERIFY(s.loadPanelPreset(imported));
+  QCOMPARE(QJsonDocument::fromJson(s.text("layout").toUtf8()), QJsonDocument::fromJson(layout));
+  QVERIFY(s.apply());
+  ConfigStore reopened(root);
+  QCOMPARE(reopened.panelPresets().size(), 2);
+  QVERIFY(reopened.loadPanelPreset(saved));
+  QCOMPARE(QJsonDocument::fromJson(reopened.text("layout").toUtf8()), QJsonDocument::fromJson(layout));
+}
+
+void ConfigTest::invalidPresetsDoNotChangeDrafts() {
+  ConfigStore s(root);
+  const auto before = s.dirtyCount();
+  const auto selected = s.value("appearance", "theme");
+  const auto file = temp.path() + "/invalid-preset.json";
+  for (const auto &content : {QByteArray("{bad"), QByteArray("[]"), QByteArray(R"({"colors":{"base":"oops"}})"),
+      QByteArray(R"({"colors":{"base":"#123456"},"glass":4})"),
+      QByteArray(R"({"name":"bad\nname","colors":{"base":"#123456"}})"),
+      QByteArray(R"({"colors":{"base":"#123456"},"tidewm":{"border":["#123456","bad"]}})"),
+      QByteArray(R"({"format":"abyssal-panels","version":1,"layout":{"version":2,"monitors":{"*":{"panels":[{"items":[4]}]}}}})")}) {
+    write(file, content);
+    QVERIFY(s.importPreset("theme", QUrl::fromLocalFile(file)).isEmpty());
+    QVERIFY(s.importPreset("panels", QUrl::fromLocalFile(file)).isEmpty());
+    QCOMPARE(s.dirtyCount(), before);
+    QCOMPARE(s.value("appearance", "theme"), selected);
+  }
+  QVERIFY(!s.setThemeColor("accent", "#80123456"));
+  QVERIFY(!s.setThemeColor("not-a-role", "#123456"));
+  QVERIFY(s.saveTheme("  ").isEmpty());
+  QVERIFY(!s.loadPanelPreset("../../other"));
+  QCOMPARE(s.dirtyCount(), before);
+  const auto target = temp.path() + "/kept-export.json";
+  const auto link = temp.path() + "/export-link.json";
+  write(target, "keep me");
+  QVERIFY(QFile::link(target, link));
+  QVERIFY(!s.exportPreset("theme", "", QUrl::fromLocalFile(link)));
+  QCOMPARE(read(target), QByteArray("keep me"));
+  const auto editable = s.copyTheme("sample");
+  s.setText("theme:" + editable, R"({"colors":{"base":"invalid"}})");
+  QVERIFY(!s.exportPreset("theme", editable, QUrl::fromLocalFile(target)));
+  QCOMPARE(read(target), QByteArray("keep me"));
+}

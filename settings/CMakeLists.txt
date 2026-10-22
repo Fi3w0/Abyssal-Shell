@@ -5,9 +5,14 @@ configure_file(org.abyssal.Settings.desktop.in org.abyssal.Settings.desktop @ONL
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
 find_package(Qt6 6.5 REQUIRED COMPONENTS Quick QuickControls2 Network)
-set(SETTINGS_CORE src/ConfigStore.cpp src/ConfigStore.h src/DesktopSettings.cpp src/WaveSettings.cpp src/WaveSettings.h)
+set(SETTINGS_CORE src/ConfigStore.cpp src/ConfigStore.h src/DesktopSettings.cpp src/Presets.cpp src/WaveSettings.cpp src/WaveSettings.h)
 qt_add_executable(abyssal-settings src/main.cpp ${SETTINGS_CORE})
 set(SETTINGS_UI_FILES
+  qml/ThemePage.qml
+  qml/ThemePreview.qml
+  qml/ColourEditor.qml
+  qml/PresetActions.qml
+  qml/PanelPreview.qml
   qml/PanelsPage.qml
   qml/StartupPage.qml
   qml/ShortcutRecorder.qml
@@ -70,7 +75,7 @@ if(BUILD_TESTING)
  target_link_libraries(settings-test PRIVATE Qt6::Quick Qt6::Test)
  add_test(NAME settings-store COMMAND settings-test)
  qt_add_executable(settings-ui-test tests/ui_test.cpp ${SETTINGS_CORE})
- qt_add_resources(settings-ui-test ui PREFIX / FILES ${SETTINGS_UI_FILES})
+ qt_add_resources(settings-ui-test ui_test PREFIX / FILES ${SETTINGS_UI_FILES})
  target_compile_definitions(settings-ui-test PRIVATE SETTINGS_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
  target_link_libraries(settings-ui-test PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Test)
  add_test(NAME settings-ui COMMAND settings-ui-test)

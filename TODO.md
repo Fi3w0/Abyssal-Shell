@@ -74,6 +74,9 @@ good-looking, following the active theme, without the odd options.
        recording and installed-app startup choices are implemented. Raw editors
        are confined to Expert; shared glow follows the actual theme accent.
        Wider system inventory remains. Audit: settings/docs/AUDIT.md.
+       Theme/panel presets now save/load and import/export; inline HSV/hex
+       editing, contrast checks and palette/layout previews are implemented.
+       Fiw's 47-page coverage map: settings/docs/SETTINGS-MAP.md.
 4. [ ] Search across every setting, with synonyms and recent searches.
        Desktop rows and shortcuts are searchable; global indexing/history remain.
 5. [ ] Window and workspace pages drive TideWM through Wave/IPC (engine,
