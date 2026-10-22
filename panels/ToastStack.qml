@@ -50,12 +50,15 @@ PanelWindow {
                 if (!t.closing && t.app === item.app && t.title === item.title && t.body === item.body) {
                     toastModel.setProperty(i, "tid", item.nid)
                     toastModel.setProperty(i, "clickable", item.hasDefault)
+                    toastModel.setProperty(i, "image", item.image || "")
+                    toastModel.setProperty(i, "category", String(item.notification?.hints?.category || ""))
+                    toastModel.setProperty(i, "actions", JSON.stringify((item.actions || []).slice(0, 3)))
                     toastModel.setProperty(i, "repeats", t.repeats + 1)
                     return
                 }
             }
             toastModel.append({ tid: item.nid, app: item.app, title: item.title, body: item.body, icon: item.icon, closing: false, repeats: 1, clickable: item.hasDefault,
-                                image: item.image || "", actions: JSON.stringify((item.actions || []).slice(0, 3)) })
+                                image: item.image || "", category: String(item.notification?.hints?.category || ""), actions: JSON.stringify((item.actions || []).slice(0, 3)) })
             while (toastModel.count > Notifications.maxToasts) toastModel.remove(0)
         }
     }
@@ -119,23 +122,31 @@ PanelWindow {
                     anchors { fill: parent; margins: 12 }
                     spacing: 11
 
-                    Rectangle {
+                    ClippingRectangle {
                         implicitWidth: 36
                         implicitHeight: 36
                         radius: 11
                         color: Theme.alpha(Theme.accent, 0.18)
                         Layout.alignment: Qt.AlignTop
 
+                        NotificationPicture {
+                            id: picture
+                            anchors.fill: parent
+                            source: toast.model.image
+                            category: toast.model.category
+                            visible: compact
+                        }
+
                         AppIcon {
                             id: appIcon
                             anchors.centerIn: parent
                             implicitSize: 20
                             iconName: toast.model.icon
-                            visible: status === Image.Ready
+                            visible: !picture.compact && status === Image.Ready
                         }
                         Icon {
                             anchors.centerIn: parent
-                            visible: !appIcon.visible
+                            visible: !picture.compact && !appIcon.visible
                             name: "bell"
                             size: 17
                             color: Theme.accent
@@ -147,8 +158,7 @@ PanelWindow {
                         Layout.fillWidth: true
 
                         RowLayout {
-                            Text { text: toast.model.app; color: Theme.subtext; font { family: Theme.font; pixelSize: 10; bold: true } }
-                            Item { Layout.fillWidth: true }
+                            Text { text: toast.model.app; color: Theme.subtext; elide: Text.ElideRight; Layout.fillWidth: true; font { family: Theme.font; pixelSize: 10; bold: true } }
                             Rectangle {
                                 visible: toast.model.repeats > 1
                                 implicitWidth: repeatText.implicitWidth + 10
@@ -187,16 +197,16 @@ PanelWindow {
                         }
                         // The app's picture (a screenshot, cover art).
                         ClippingRectangle {
-                            visible: toast.model.image !== "" && pic.status === Image.Ready
+                            visible: picture.status === Image.Ready && !picture.compact && pic.status === Image.Ready
                             Layout.fillWidth: true
                             Layout.topMargin: 6
-                            Layout.preferredHeight: visible ? Math.min(150, width * pic.implicitHeight / Math.max(1, pic.implicitWidth)) : 0
+                            Layout.preferredHeight: visible ? picture.previewHeight(width, 150) : 0
                             radius: 10
                             color: "transparent"
                             Image {
                                 id: pic
                                 anchors.fill: parent
-                                source: toast.model.image
+                                source: picture.status === Image.Ready && !picture.compact ? toast.model.image : ""
                                 fillMode: Image.PreserveAspectFit
                                 asynchronous: true
                                 sourceSize.width: Math.ceil(width * (Screen.devicePixelRatio || 1))

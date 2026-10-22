@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell.Widgets
 import "../components"
 import "../services"
 
@@ -163,7 +164,7 @@ ColumnLayout {
             anchors { left: parent.left; right: parent.right; top: parent.top; margins: 10 }
             spacing: 11
 
-            Rectangle {
+            ClippingRectangle {
                 implicitWidth: 26
                 implicitHeight: 26
                 radius: 13
@@ -171,16 +172,23 @@ ColumnLayout {
                 border.width: 1
                 border.color: Theme.alpha(Theme.text, 0.12)
                 Layout.alignment: Qt.AlignTop
+                NotificationPicture {
+                    id: picture
+                    anchors.fill: parent
+                    source: card.modelData.image || ""
+                    category: String(card.modelData.notification?.hints?.category || "")
+                    visible: compact
+                }
                 AppIcon {
                     id: appIcon
                     anchors.centerIn: parent
                     implicitSize: 16
                     iconName: card.modelData.icon.startsWith("/") || card.modelData.icon.startsWith("file:") ? "" : card.modelData.icon
-                    visible: status === Image.Ready
+                    visible: !picture.compact && status === Image.Ready
                 }
                 Text {
                     anchors.centerIn: parent
-                    visible: !appIcon.visible
+                    visible: !picture.compact && !appIcon.visible
                     text: card.modelData.app.charAt(0).toUpperCase()
                     color: Theme.subtext
                     font { family: Theme.font; pixelSize: 10 }
@@ -226,11 +234,11 @@ ColumnLayout {
                     Layout.fillWidth: true
                 }
                 Image {
-                    visible: (card.modelData.image || "") !== "" && status === Image.Ready
+                    visible: picture.status === Image.Ready && !picture.compact && status === Image.Ready
                     Layout.fillWidth: true
                     Layout.topMargin: 4
-                    Layout.preferredHeight: visible ? Math.min(120, width * implicitHeight / Math.max(1, implicitWidth)) : 0
-                    source: card.modelData.image || ""
+                    Layout.preferredHeight: visible ? picture.previewHeight(width, 120) : 0
+                    source: picture.status === Image.Ready && !picture.compact ? (card.modelData.image || "") : ""
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
                     sourceSize.width: Math.ceil(width * (Screen.devicePixelRatio || 1))
